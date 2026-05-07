@@ -67,7 +67,7 @@ export default function HomePage() {
         offset={layer3}
         className="absolute inset-0 z-20 pointer-events-none"
       >
-        <div className="h-full flex flex-col justify-end items-center pb-24 sm:pb-32 px-4">
+        <div className="h-full flex flex-col justify-end items-center pb-12 sm:pb-18 px-4">
           <AnimatePresence mode="wait">
             {!showInterface ? (
               <motion.div
