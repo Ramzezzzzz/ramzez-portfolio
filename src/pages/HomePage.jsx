@@ -43,7 +43,7 @@ export default function HomePage() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)",
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.9) 100%)",
           }}
         />
       </ParallaxLayer>
@@ -57,7 +57,7 @@ export default function HomePage() {
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez"
           className="max-h-[70vh] sm:max-h-[80vh] object-contain cursor-pointer hover:scale-[1.02] transition-transform duration-300"
-          style={{ marginBottom: "-5px" }}
+          style={{ marginBottom: "-35px" }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
