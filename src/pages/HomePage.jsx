@@ -39,8 +39,13 @@ export default function HomePage() {
             backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
           }}
         />
-        {/* Градиент: края тёмные, центр светлее */}
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-black/30 to-black/80 pointer-events-none" />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)",
+          }}
+        />
       </ParallaxLayer>
 
       {/* Слой 2: персонаж (прижат к низу) */}

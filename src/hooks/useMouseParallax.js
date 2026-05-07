@@ -14,15 +14,33 @@ export function useMouseParallax() {
       const deltaX = e.clientX - centerX;
       const deltaY = e.clientY - centerY;
 
-      // Увеличенные коэффициенты для ощутимого эффекта
-      const layer1Speed = 0.025; // фон
-      const layer2Speed = 0.06; // персонаж
-      const layer3Speed = 0.12; // контент
+      // Фон: плавное движение
+      const layer1Speed = 0.02;
+      // Персонаж: минимальное перемещение, ограничено ±5px
+      const layer2Speed = 0.01;
+      const maxLayer2Shift = 5;
+      // Контент: более живое движение
+      const layer3Speed = 0.08;
 
       setOffsets({
-        layer1: { x: deltaX * layer1Speed, y: deltaY * layer1Speed },
-        layer2: { x: deltaX * layer2Speed, y: deltaY * layer2Speed },
-        layer3: { x: deltaX * layer3Speed, y: deltaY * layer3Speed },
+        layer1: {
+          x: deltaX * layer1Speed,
+          y: deltaY * layer1Speed,
+        },
+        layer2: {
+          x: Math.max(
+            -maxLayer2Shift,
+            Math.min(maxLayer2Shift, deltaX * layer2Speed)
+          ),
+          y: Math.max(
+            -maxLayer2Shift,
+            Math.min(maxLayer2Shift, deltaY * layer2Speed * 0.2)
+          ), // почти нет вертикали
+        },
+        layer3: {
+          x: deltaX * layer3Speed,
+          y: deltaY * layer3Speed,
+        },
       });
     };
 
