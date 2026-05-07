@@ -57,6 +57,7 @@ export default function HomePage() {
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez"
           className="max-h-[70vh] sm:max-h-[80vh] object-contain cursor-pointer hover:scale-[1.02] transition-transform duration-300"
+          style={{ marginBottom: "-5px" }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
