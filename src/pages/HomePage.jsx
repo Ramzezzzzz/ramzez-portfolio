@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
@@ -15,24 +15,37 @@ const dialogues = [
 ];
 
 export default function HomePage() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { layer1, layer2, layer3 } = useMouseParallax();
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
-  const [activeColumn, setActiveColumn] = useState(null); // 'projects' | 'blog'
+  const [activeColumn, setActiveColumn] = useState(null);
 
-  // Переход к следующей фразе (вызывается по клику на персонажа или пузырь)
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const nextDialogue = () => {
     if (dialogueIndex < dialogues.length - 1) {
       setDialogueIndex((prev) => prev + 1);
     } else {
-      setShowInterface(true); // показать кнопки вместо диалога
+      setShowInterface(true);
     }
+  };
+
+  // Параллакс‑смещения только для десктопа
+  const offsets = {
+    layer1: isMobile ? { x: 0, y: 0 } : layer1,
+    layer2: isMobile ? { x: 0, y: 0 } : layer2,
+    layer3: isMobile ? { x: 0, y: 0 } : layer3,
   };
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black select-none">
-      {/* Слой 1: фон + затемняющий градиент */}
-      <ParallaxLayer offset={layer1} className="absolute inset-0 z-0">
+      {/* Слой 1: фон + затемняющий радиальный градиент */}
+      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
           className="w-full h-full bg-cover bg-center"
           style={{
@@ -48,26 +61,32 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж (прижат к низу) */}
+      {/* Слой 2: персонаж (на мобильных – статичен) */}
       <ParallaxLayer
-        offset={layer2}
-        className="absolute inset-0 z-10 flex items-end justify-center pb-4 sm:pb-8"
+        offset={offsets.layer2}
+        className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
       >
         <img
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez"
-          className="max-h-[70vh] sm:max-h-[80vh] object-contain cursor-pointer hover:scale-[1.02] transition-transform duration-300"
-          style={{ marginBottom: "-35px" }}
+          className={`max-h-[65vh] sm:max-h-[80vh] object-contain cursor-pointer transition-transform duration-300 ${
+            isMobile ? "hover:scale-100" : "hover:scale-[1.02]"
+          }`}
+          style={{ marginBottom: isMobile ? "-5px" : "-25px" }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог и интерфейс */}
+      {/* Слой 3: диалог и интерфейс (на мобильных – без параллакса) */}
       <ParallaxLayer
-        offset={layer3}
+        offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
       >
-        <div className="h-full flex flex-col justify-end items-center pb-12 sm:pb-18 px-4">
+        <div
+          className={`h-full flex flex-col justify-end items-center px-4 ${
+            isMobile ? "pb-16" : "pb-24 sm:pb-32"
+          }`}
+        >
           <AnimatePresence mode="wait">
             {!showInterface ? (
               <motion.div
@@ -76,43 +95,42 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.5 }}
-                className="pointer-events-auto cursor-pointer mb-4"
+                className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
                 onClick={nextDialogue}
               >
-                <GlassCard className="max-w-md mx-auto flex items-center gap-4 px-6 py-4">
-                  <MessageCircle className="w-6 h-6 text-red-400 shrink-0" />
-                  <p className="text-white text-lg font-medium">
+                <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
+                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
+                  <p className="text-white text-base sm:text-lg font-medium">
                     {dialogues[dialogueIndex]}
                   </p>
                 </GlassCard>
               </motion.div>
             ) : (
-              // Интерфейс с кнопками / колонками
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
                 {!activeColumn ? (
-                  <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                     <button
                       onClick={() => setActiveColumn("projects")}
-                      className="flex items-center gap-3 px-8 py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
                     >
-                      <FolderGit2 className="w-6 h-6" />
+                      <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
                       Проекты
                     </button>
                     <button
                       onClick={() => setActiveColumn("blog")}
-                      className="flex items-center gap-3 px-8 py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
                     >
-                      <PenTool className="w-6 h-6" />
+                      <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
                       Блог
                     </button>
                   </div>
                 ) : (
                   <div className="flex justify-center">
-                    <GlassCard className="max-w-lg w-full relative">
+                    <GlassCard className="max-w-lg w-full relative !rounded-2xl">
                       <button
                         onClick={() => setActiveColumn(null)}
                         className="absolute top-3 right-3 text-white/60 hover:text-white"
