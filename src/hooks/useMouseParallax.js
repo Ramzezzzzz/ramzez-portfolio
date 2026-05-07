@@ -14,10 +14,10 @@ export function useMouseParallax() {
       const deltaX = e.clientX - centerX;
       const deltaY = e.clientY - centerY;
 
-      // Коэффициенты для каждого слоя
-      const layer1Speed = 0.01; // фон
-      const layer2Speed = 0.03; // персонаж
-      const layer3Speed = 0.06; // контент (стеклянные карточки)
+      // Увеличенные коэффициенты для ощутимого эффекта
+      const layer1Speed = 0.025; // фон
+      const layer2Speed = 0.06; // персонаж
+      const layer3Speed = 0.12; // контент
 
       setOffsets({
         layer1: { x: deltaX * layer1Speed, y: deltaY * layer1Speed },
