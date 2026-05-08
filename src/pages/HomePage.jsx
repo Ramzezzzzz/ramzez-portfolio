@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import ParallaxLayer from '../components/ParallaxLayer';
-import GlassCard from '../components/GlassCard';
-import { useMouseParallax } from '../hooks/useMouseParallax';
-import { MessageCircle, FolderGit2, PenTool, X } from 'lucide-react';
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import ParallaxLayer from "../components/ParallaxLayer";
+import GlassCard from "../components/GlassCard";
+import { useMouseParallax } from "../hooks/useMouseParallax";
+import { MessageCircle, FolderGit2, PenTool, X } from "lucide-react";
 
-const BASE_URL = import.meta.env.BASE_URL || '/';
+const BASE_URL = import.meta.env.BASE_URL || "/";
 
 const dialogues = [
   "Привет! Я Ramzez.",
@@ -22,13 +22,17 @@ export default function HomePage() {
   const [activeColumn, setActiveColumn] = useState(null);
 
   // Состояния для гироскопа
-  const [gyroOffsets, setGyroOffsets] = useState({ layer1: { x: 0, y: 0 }, layer2: { x: 0, y: 0 }, layer3: { x: 0, y: 0 } });
+  const [gyroOffsets, setGyroOffsets] = useState({
+    layer1: { x: 0, y: 0 },
+    layer2: { x: 0, y: 0 },
+    layer3: { x: 0, y: 0 },
+  });
 
   // Определение мобильного устройства
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Гироскоп для мобильных
@@ -41,7 +45,7 @@ export default function HomePage() {
       // gamma: наклон влево-вправо (-90..90)
       // beta: наклон вперёд-назад (-180..180)
       const gamma = event.gamma || 0; // -90..90
-      const beta = event.beta || 0;   // -180..180
+      const beta = event.beta || 0; // -180..180
 
       // Нормализуем до -1..1
       const normGamma = gamma / 90;
@@ -56,28 +60,39 @@ export default function HomePage() {
       setGyroOffsets({
         layer1: { x: normGamma * 20, y: normBeta * 20 },
         layer2: {
-          x: Math.max(-maxLayer2Shift, Math.min(maxLayer2Shift, normGamma * 30 * layer2Speed)),
-          y: Math.max(-maxLayer2Shift, Math.min(maxLayer2Shift, normBeta * 30 * layer2Speed)),
+          x: Math.max(
+            -maxLayer2Shift,
+            Math.min(maxLayer2Shift, normGamma * 30 * layer2Speed)
+          ),
+          y: Math.max(
+            -maxLayer2Shift,
+            Math.min(maxLayer2Shift, normBeta * 30 * layer2Speed)
+          ),
         },
         layer3: { x: normGamma * 50, y: normBeta * 50 },
       });
     };
 
     const requestPermission = async () => {
-      if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+      if (typeof DeviceOrientationEvent?.requestPermission === "function") {
         try {
           const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation);
-            cleanup = () => window.removeEventListener('deviceorientation', handleOrientation);
+          if (permission === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation);
+            cleanup = () =>
+              window.removeEventListener(
+                "deviceorientation",
+                handleOrientation
+              );
           }
         } catch (error) {
-          console.log('Ошибка запроса разрешения гироскопа:', error);
+          console.log("Ошибка запроса разрешения гироскопа:", error);
         }
       } else {
         // Обычные браузеры (Android)
-        window.addEventListener('deviceorientation', handleOrientation);
-        cleanup = () => window.removeEventListener('deviceorientation', handleOrientation);
+        window.addEventListener("deviceorientation", handleOrientation);
+        cleanup = () =>
+          window.removeEventListener("deviceorientation", handleOrientation);
       }
     };
 
@@ -88,7 +103,7 @@ export default function HomePage() {
 
   const nextDialogue = () => {
     if (dialogueIndex < dialogues.length - 1) {
-      setDialogueIndex(prev => prev + 1);
+      setDialogueIndex((prev) => prev + 1);
     } else {
       setShowInterface(true);
     }
@@ -98,37 +113,56 @@ export default function HomePage() {
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black select-none">
+    <div className="relative w-full h-dvh overflow-hidden bg-black select-none">
       {/* Слой 1: фон + затемняющий радиальный градиент */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
           className="w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${BASE_URL}images/portfolio_background.png)` }}
+          style={{
+            backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
+          }}
         />
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.9) 100%)' }}
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.9) 100%)",
+          }}
         />
       </ParallaxLayer>
 
       {/* Слой 2: персонаж (увеличен на мобильных) */}
-      <ParallaxLayer offset={offsets.layer2} className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8">
+      <ParallaxLayer
+        offset={offsets.layer2}
+        className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
+      >
         <img
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez"
           className={`object-contain cursor-pointer transition-transform duration-300 ${
             isMobile
-              ? 'max-h-[185vh] hover:scale-190'   // больше на мобилках
+              ? 'max-h-none max-w-none'
               : 'max-h-[80vh] hover:scale-[1.02]'
           }`}
-          style={{ marginBottom: isMobile ? '0px' : '-25px' }}
+          style={{
+            marginBottom: isMobile ? '0px' : '-25px',
+            transform: isMobile ? 'scale(2.8)' : 'none',
+            transformOrigin: 'bottom center', // растягиваем от нижнего края
+          }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
 
       {/* Слой 3: диалог и интерфейс */}
-      <ParallaxLayer offset={offsets.layer3} className="absolute inset-0 z-20 pointer-events-none">
-        <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? 'pb-12' : 'pb-24 sm:pb-32'}`}>
+      <ParallaxLayer
+        offset={offsets.layer3}
+        className="absolute inset-0 z-20 pointer-events-none"
+      >
+        <div
+          className={`h-full flex flex-col justify-end items-center px-4 ${
+            isMobile ? "pb-12" : "pb-24 sm:pb-32"
+          }`}
+        >
           <AnimatePresence mode="wait">
             {!showInterface ? (
               <motion.div
@@ -142,7 +176,9 @@ export default function HomePage() {
               >
                 <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
-                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[dialogueIndex]}</p>
+                  <p className="text-white text-base sm:text-lg font-medium">
+                    {dialogues[dialogueIndex]}
+                  </p>
                 </GlassCard>
               </motion.div>
             ) : (
@@ -154,14 +190,14 @@ export default function HomePage() {
                 {!activeColumn ? (
                   <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                     <button
-                      onClick={() => setActiveColumn('projects')}
+                      onClick={() => setActiveColumn("projects")}
                       className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
                     >
                       <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
                       Проекты
                     </button>
                     <button
-                      onClick={() => setActiveColumn('blog')}
+                      onClick={() => setActiveColumn("blog")}
                       className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
                     >
                       <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -178,12 +214,12 @@ export default function HomePage() {
                         <X className="w-5 h-5" />
                       </button>
                       <h3 className="text-white text-xl font-bold mb-3">
-                        {activeColumn === 'projects' ? 'Проекты' : 'Блог'}
+                        {activeColumn === "projects" ? "Проекты" : "Блог"}
                       </h3>
                       <p className="text-gray-300">
-                        {activeColumn === 'projects'
-                          ? 'Скоро здесь появятся мои работы.'
-                          : 'Заметки о разработке.'}
+                        {activeColumn === "projects"
+                          ? "Скоро здесь появятся мои работы."
+                          : "Заметки о разработке."}
                       </p>
                     </GlassCard>
                   </div>
