@@ -173,8 +173,8 @@ export default function HomePage() {
             background:
               "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
-          animate={{ opacity: [0.8, 1, 0.8] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         />
       </ParallaxLayer>
 
@@ -192,7 +192,7 @@ export default function HomePage() {
               : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? "0px" : "-55px",
+            marginBottom: isMobile ? "0px" : "-80px",
             transform: isMobile ? "scale(0.8)" : "none",
             transformOrigin: "bottom center",
           }}
@@ -207,7 +207,7 @@ export default function HomePage() {
       >
         <div
           className={`h-full flex flex-col justify-end items-center px-4 ${
-            isMobile ? "pb-12" : "pb-24 sm:pb-32"
+            isMobile ? "pb-12" : "pb-12 sm:pb-18"
           }`}
         >
           <AnimatePresence mode="wait">
