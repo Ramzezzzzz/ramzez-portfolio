@@ -192,8 +192,8 @@ export default function HomePage() {
               : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? "-5px" : "-40px",
-            transform: isMobile ? "scale(1.05)" : "none",
+            marginBottom: isMobile ? "-8px" : "-40px",
+            transform: isMobile ? "scale(0.8)" : "none",
             transformOrigin: "bottom center",
           }}
           onClick={nextDialogue}
