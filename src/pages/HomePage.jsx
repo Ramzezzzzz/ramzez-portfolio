@@ -26,18 +26,16 @@ export default function HomePage() {
     `${BASE_URL}images/portfolio_background.png`
   );
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [bgSize, setBgSize] = useState("cover"); // "cover" или "200%"
+  const [globalScale, setGlobalScale] = useState(1);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
-  // Эффект смены объектива
   useEffect(() => {
-    setBgSize(activeColumn ? "200%" : "cover");
+    setGlobalScale(activeColumn ? 0.4 : 1);
   }, [activeColumn]);
 
-  // Прогрессивная загрузка качественного фона
   useEffect(() => {
     const img = new Image();
     img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
@@ -49,7 +47,6 @@ export default function HomePage() {
     img.onerror = () => console.log("Оригинал не загружен, остаёмся на сжатом");
   }, []);
 
-  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -91,7 +88,6 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -169,20 +165,26 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон с эффектом объектива */}
-      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
+      {/* Слой 1: фон с масштабированием */}
+      <ParallaxLayer
+        offset={offsets.layer1}
+        className="absolute inset-0 z-0 overflow-hidden"
+      >
         <motion.div
-          className="absolute inset-0 w-full h-full bg-center"
+          className="absolute"
           style={{
+            width: "200vw",
+            height: "200vh",
+            left: "-50vw",
+            top: "-50vh",
             backgroundImage: `url(${highResBg})`,
-            backgroundSize: bgSize,
-            backgroundRepeat: "no-repeat",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
             opacity: bgOpacity,
           }}
-          animate={{ backgroundSize: bgSize }}
+          animate={{ scale: globalScale }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
-        {/* Затемнение */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -194,7 +196,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж (статичен) */}
+      {/* Слой 2: персонаж (синхронно с фоном) */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
@@ -206,11 +208,13 @@ export default function HomePage() {
             isMobile ? "max-h-[85vh] max-w-none" : "max-h-[80vh]"
           }`}
           style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
+          animate={{ scale: globalScale }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог + карточки проектов (без выезжающей панели) */}
+      {/* Слой 3: диалог и карточки проектов */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
@@ -268,27 +272,26 @@ export default function HomePage() {
                     transition={{ delay: 0.2 }}
                     className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-4xl mx-auto px-4 mt-8"
                   >
-                    {/* Примеры карточек – замените на реальные проекты */}
                     <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
-                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <FolderGit2 className="w-4 h-4 text-red-400 mb-2" />
                       <span className="text-white text-sm font-medium">
                         Проект 1
                       </span>
                     </GlassCard>
                     <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
-                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <FolderGit2 className="w-4 h-4 text-red-400 mb-2" />
                       <span className="text-white text-sm font-medium">
                         Проект 2
                       </span>
                     </GlassCard>
                     <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
-                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <FolderGit2 className="w-4 h-4 text-red-400 mb-2" />
                       <span className="text-white text-sm font-medium">
                         Проект 3
                       </span>
                     </GlassCard>
                     <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
-                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <FolderGit2 className="w-4 h-4 text-red-400 mb-2" />
                       <span className="text-white text-sm font-medium">
                         Проект 4
                       </span>
