@@ -1,14 +1,17 @@
-import imagemin from 'imagemin';
-import imageminMozjpeg from 'imagemin-mozjpeg';
-import imageminPngquant from 'imagemin-pngquant';
-import fs from 'fs';
+import imagemin from "imagemin";
+import imageminMozjpeg from "imagemin-mozjpeg";
+import imageminPngquant from "imagemin-pngquant";
+import fs from "fs";
+import path from "path";
 
-const inputDir = 'public/images';
-const outputDir = 'dist/images';
+const inputDir = "public/images";
+const outputDir = "dist/images";
 
+// Создаём выходную папку
 fs.mkdirSync(outputDir, { recursive: true });
 
 (async () => {
+  // Сжимаем только файлы в корне inputDir, исключая подпапки (originals и др.)
   const files = await imagemin([`${inputDir}/*.{jpg,png,webp}`], {
     destination: outputDir,
     plugins: [
@@ -16,5 +19,5 @@ fs.mkdirSync(outputDir, { recursive: true });
       imageminPngquant({ quality: [0.7, 0.9] }),
     ],
   });
-  console.log('Изображения сжаты:', files.length);
+  console.log("Сжатые изображения (без originals):", files.length);
 })();

@@ -192,7 +192,7 @@ export default function HomePage() {
               : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? "0px" : "-80px",
+            marginBottom: isMobile ? "0px" : "-60px",
             transform: isMobile ? "scale(0.8)" : "none",
             transformOrigin: "bottom center",
           }}
