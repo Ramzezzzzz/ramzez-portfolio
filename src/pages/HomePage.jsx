@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
 import { useMouseParallax } from "../hooks/useMouseParallax";
+import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool, X } from "lucide-react";
-import { useClickSound } from '../hooks/useClickSound';
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -36,28 +36,25 @@ export default function HomePage() {
       if (Math.abs(deltaY) < 50) return;
 
       if (deltaY > 0) {
-        playClick();
         if (!showInterface) {
           if (dialogueIndex < dialogues.length - 1) {
             setDialogueIndex((prev) => prev + 1);
           } else {
             setShowInterface(true);
           }
-          if (isMobile && navigator.vibrate) navigator.vibrate(10);
+          playClick();
         }
-
       } else {
-        playClick();
         if (showInterface) {
           setShowInterface(false);
           setDialogueIndex(dialogues.length - 1);
         } else if (dialogueIndex > 0) {
           setDialogueIndex((prev) => prev - 1);
         }
-        if (isMobile && navigator.vibrate) navigator.vibrate(10);
+        playClick();
       }
     },
-    [dialogueIndex, showInterface, isMobile]
+    [dialogueIndex, showInterface, playClick]
   );
 
   useEffect(() => {
@@ -85,37 +82,29 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Гироскоп для мобильных
+  // Гироскоп для мобильных – исправлен дублирующийся вызов
   useEffect(() => {
     if (!isMobile) return;
 
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      // gamma: наклон влево-вправо (-90..90)
-      // beta: наклон вперёд-назад (-180..180)
-      const gamma = event.gamma || 0; // -90..90
-      const beta = event.beta || 0; // -180..180
+      const gamma = event.gamma || 0;
+      const beta = event.beta || 0;
 
-      // Нормализуем до -1..1
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      // Коэффициенты как у мыши, но с ограничениями
-      const layer1Speed = 0.02;
-      const layer2Speed = 0.01;
-      const maxLayer2Shift = 5;
-      const layer3Speed = 0.08;
-
+      // Увеличиваем смещения для заметности
       setGyroOffsets({
-        setGyroOffsets({
-          layer1: { x: normGamma * 30, y: normBeta * 30 },
-          layer2: {
-            x: Math.max(-15, Math.min(15, normGamma * 50 * 0.02)),
-            y: Math.max(-15, Math.min(15, normBeta * 50 * 0.02)),
-          },
-          layer3: { x: normGamma * 80, y: normBeta * 80 },
-        });
+        layer1: { x: normGamma * 30, y: normBeta * 30 },
+        layer2: {
+          x: Math.max(-15, Math.min(15, normGamma * 50 * 0.02)),
+          y: Math.max(-15, Math.min(15, normBeta * 50 * 0.02)),
+        },
+        layer3: { x: normGamma * 80, y: normBeta * 80 },
+      });
+    };
 
     const requestPermission = async () => {
       if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -133,7 +122,6 @@ export default function HomePage() {
           console.log("Ошибка запроса разрешения гироскопа:", error);
         }
       } else {
-        // Обычные браузеры (Android)
         window.addEventListener("deviceorientation", handleOrientation);
         cleanup = () =>
           window.removeEventListener("deviceorientation", handleOrientation);
@@ -146,7 +134,7 @@ export default function HomePage() {
   }, [isMobile]);
 
   const nextDialogue = () => {
-    playClick(); 
+    playClick();
     if (dialogueIndex < dialogues.length - 1) {
       setDialogueIndex((prev) => prev + 1);
     } else {
@@ -180,7 +168,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж (увеличен на мобильных) */}
+      {/* Слой 2: персонаж */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
@@ -196,7 +184,7 @@ export default function HomePage() {
           style={{
             marginBottom: isMobile ? "0px" : "-45px",
             transform: isMobile ? "scale(0.8)" : "none",
-            transformOrigin: "bottom center", // растягиваем от нижнего края
+            transformOrigin: "bottom center",
           }}
           onClick={nextDialogue}
         />
