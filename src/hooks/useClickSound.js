@@ -1,9 +1,12 @@
 import { useRef, useCallback } from "react";
+import { useSound } from "../context/SoundContext";
 
 export function useClickSound() {
+  const { isMuted } = useSound();
   const audioContextRef = useRef(null);
 
   const playClick = useCallback(() => {
+    if (isMuted) return;
     try {
       if (!audioContextRef.current) {
         audioContextRef.current = new (window.AudioContext ||
@@ -16,16 +19,14 @@ export function useClickSound() {
       oscillator.connect(gainNode);
       gainNode.connect(ctx.destination);
 
-      oscillator.frequency.setValueAtTime(800, ctx.currentTime); // частота щелчка
+      oscillator.frequency.setValueAtTime(800, ctx.currentTime);
       gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.01); // резкое затухание
+      gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.01);
 
       oscillator.start(ctx.currentTime);
       oscillator.stop(ctx.currentTime + 0.01);
-    } catch (e) {
-      // Игнорируем ошибки (например, если AudioContext не поддерживается)
-    }
-  }, []);
+    } catch (e) {}
+  }, [isMuted]);
 
   return playClick;
 }

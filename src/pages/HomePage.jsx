@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
+import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool, X } from "lucide-react";
@@ -21,6 +22,10 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null);
+  const [highResBg, setHighResBg] = useState(
+    `${BASE_URL}images/portfolio_background.png`
+  );
+  const [bgOpacity, setBgOpacity] = useState(1);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -151,20 +156,25 @@ export default function HomePage() {
       className="relative w-full h-dvh overflow-hidden bg-black select-none"
       style={{ touchAction: isMobile ? "none" : "auto" }}
     >
-      {/* Слой 1: фон + затемняющий радиальный градиент */}
+      <MuteButton />
+
+      {/* Слой 1: фон с прогрессивной загрузкой и анимированным затемнением */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
-          className="w-full h-full bg-cover bg-center"
+          className="w-full h-full bg-cover bg-center transition-opacity duration-1000"
           style={{
-            backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
+            backgroundImage: `url(${highResBg})`,
+            opacity: bgOpacity,
           }}
         />
-        <div
+        <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.9) 100%)",
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
+          animate={{ opacity: [0.8, 1, 0.8] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
       </ParallaxLayer>
 
@@ -182,7 +192,7 @@ export default function HomePage() {
               : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? "0px" : "-45px",
+            marginBottom: isMobile ? "0px" : "-55px",
             transform: isMobile ? "scale(0.8)" : "none",
             transformOrigin: "bottom center",
           }}
