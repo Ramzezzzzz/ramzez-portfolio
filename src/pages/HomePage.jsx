@@ -32,7 +32,7 @@ export default function HomePage() {
 
   // Реакция на открытие/закрытие раздела
   useEffect(() => {
-    setGlobalScale(activeColumn ? 0.5 : 0.8);
+    setGlobalScale(activeColumn ? 0.7 : 1);
   }, [activeColumn]);
 
   // Прогрессивная загрузка фона
