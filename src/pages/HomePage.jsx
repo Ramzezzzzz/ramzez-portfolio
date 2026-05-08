@@ -22,14 +22,28 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null);
-  const [highResBg, setHighResBg] = useState(
-    `${BASE_URL}images/portfolio_background.png`
-  );
+  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
+
+  // Прогрессивная загрузка качественного фона
+  useEffect(() => {
+    const img = new Image();
+    img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
+    img.onload = () => {
+      setHighResBg(img.src);
+      setBgOpacity(0);
+      requestAnimationFrame(() => {
+        setBgOpacity(1);
+      });
+    };
+    img.onerror = () => {
+      console.log('Оригинал не загружен, остаёмся на сжатом');
+    };
+  }, []);
 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
@@ -73,21 +87,18 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Состояния для гироскопа
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
     layer3: { x: 0, y: 0 },
   });
 
-  // Определение мобильного устройства
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Гироскоп для мобильных – исправлен дублирующийся вызов
   useEffect(() => {
     if (!isMobile) return;
 
@@ -100,7 +111,6 @@ export default function HomePage() {
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      // Увеличиваем смещения для заметности
       setGyroOffsets({
         layer1: { x: normGamma * 30, y: normBeta * 30 },
         layer2: {
@@ -118,10 +128,7 @@ export default function HomePage() {
           if (permission === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
             cleanup = () =>
-              window.removeEventListener(
-                "deviceorientation",
-                handleOrientation
-              );
+              window.removeEventListener("deviceorientation", handleOrientation);
           }
         } catch (error) {
           console.log("Ошибка запроса разрешения гироскопа:", error);
@@ -147,7 +154,6 @@ export default function HomePage() {
     }
   };
 
-  // Выбор источника смещений: на мобильных – гироскоп, иначе – мышь
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
 
   return (
@@ -234,48 +240,64 @@ export default function HomePage() {
                 animate={{ opacity: 1 }}
                 className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
-{!activeColumn ? (
-  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-    {/* кнопки без изменений */}
-  </div>
-) : (
-  <>
-    {isMobile ? (
-      // Мобильная панель проектов
-      <motion.div
-        initial={{ opacity: 0, x: "-100%" }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: "-100%" }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="absolute left-0 top-0 bottom-0 w-3/4 bg-black/80 backdrop-blur-md border-r border-white/20 p-4 overflow-y-auto z-30"
-      >
-        <button
-          onClick={() => setActiveColumn(null)}
-          className="absolute top-4 right-4 text-white/60 hover:text-white"
-        >
-          <X className="w-5 h-5" />
-        </button>
-        <h3 className="text-white text-xl font-bold mb-4">Проекты</h3>
-        {/* Здесь позже разместим карточки, пока заглушка */}
-        <p className="text-gray-300">Скоро здесь будут мои работы.</p>
-      </motion.div>
-    ) : (
-      // Десктопная карточка (оставляем без изменений)
-      <div className="flex justify-center">
-        <GlassCard className="max-w-lg w-full relative !rounded-2xl">
-          <button
-            onClick={() => setActiveColumn(null)}
-            className="absolute top-3 right-3 text-white/60 hover:text-white"
-          >
-            <X className="w-5 h-5" />
-          </button>
-          <h3 className="text-white text-xl font-bold mb-3">Проекты</h3>
-          <p className="text-gray-300">Скоро здесь будут мои работы.</p>
-        </GlassCard>
-      </div>
-    )}
-  </>
-)}
+                {!activeColumn ? (
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                    <button
+                      onClick={() => setActiveColumn("projects")}
+                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                    >
+                      <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                      Проекты
+                    </button>
+                    <button
+                      onClick={() => setActiveColumn("blog")}
+                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                    >
+                      <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
+                      Блог
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {isMobile ? (
+                      <motion.div
+                        initial={{ opacity: 0, x: "-100%" }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: "-100%" }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="absolute left-0 top-0 bottom-0 w-3/4 bg-black/80 backdrop-blur-md border-r border-white/20 p-4 overflow-y-auto z-30"
+                      >
+                        <button
+                          onClick={() => setActiveColumn(null)}
+                          className="absolute top-4 right-4 text-white/60 hover:text-white"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                        <h3 className="text-white text-xl font-bold mb-4">Проекты</h3>
+                        <p className="text-gray-300">Скоро здесь будут мои работы.</p>
+                      </motion.div>
+                    ) : (
+                      <div className="flex justify-center">
+                        <GlassCard className="max-w-lg w-full relative !rounded-2xl">
+                          <button
+                            onClick={() => setActiveColumn(null)}
+                            className="absolute top-3 right-3 text-white/60 hover:text-white"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                          <h3 className="text-white text-xl font-bold mb-3">
+                            {activeColumn === "projects" ? "Проекты" : "Блог"}
+                          </h3>
+                          <p className="text-gray-300">
+                            {activeColumn === "projects"
+                              ? "Скоро здесь будут мои работы."
+                              : "Заметки о разработке."}
+                          </p>
+                        </GlassCard>
+                      </div>
+                    )}
+                  </>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
