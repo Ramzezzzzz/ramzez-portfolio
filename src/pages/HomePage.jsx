@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
@@ -141,13 +141,13 @@ export default function HomePage() {
           alt="Ramzez"
           className={`object-contain cursor-pointer transition-transform duration-300 ${
             isMobile
-              ? 'max-h-none max-w-none'
-              : 'max-h-[80vh] hover:scale-[1.02]'
+              ? "max-h-none max-w-none"
+              : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? '0px' : '-25px',
-            transform: isMobile ? 'scale(1.5)' : 'none',
-            transformOrigin: 'bottom center', // растягиваем от нижнего края
+            marginBottom: isMobile ? "0px" : "-25px",
+            transform: isMobile ? "scale(1.05)" : "none",
+            transformOrigin: "bottom center", // растягиваем от нижнего края
           }}
           onClick={nextDialogue}
         />
