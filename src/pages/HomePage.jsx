@@ -22,12 +22,20 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null);
-  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
+  const [highResBg, setHighResBg] = useState(
+    `${BASE_URL}images/portfolio_background.png`
+  );
   const [bgOpacity, setBgOpacity] = useState(1);
+  const [bgScale, setBgScale] = useState(1); // масштаб фона: 1 или 0.4
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
+
+  // Переключение масштаба фона при открытии/закрытии раздела
+  useEffect(() => {
+    setBgScale(activeColumn ? 0.4 : 1);
+  }, [activeColumn]);
 
   // Прогрессивная загрузка качественного фона
   useEffect(() => {
@@ -36,15 +44,12 @@ export default function HomePage() {
     img.onload = () => {
       setHighResBg(img.src);
       setBgOpacity(0);
-      requestAnimationFrame(() => {
-        setBgOpacity(1);
-      });
+      requestAnimationFrame(() => setBgOpacity(1));
     };
-    img.onerror = () => {
-      console.log('Оригинал не загружен, остаёмся на сжатом');
-    };
+    img.onerror = () => console.log("Оригинал не загружен, остаёмся на сжатом");
   }, []);
 
+  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -53,7 +58,6 @@ export default function HomePage() {
     (e) => {
       const deltaY = touchStartY.current - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) < 50) return;
-
       if (deltaY > 0) {
         if (!showInterface) {
           if (dialogueIndex < dialogues.length - 1) {
@@ -87,6 +91,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
+  // Гироскоп и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -101,13 +106,11 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isMobile) return;
-
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
       const gamma = event.gamma || 0;
       const beta = event.beta || 0;
-
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
@@ -128,7 +131,10 @@ export default function HomePage() {
           if (permission === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
             cleanup = () =>
-              window.removeEventListener("deviceorientation", handleOrientation);
+              window.removeEventListener(
+                "deviceorientation",
+                handleOrientation
+              );
           }
         } catch (error) {
           console.log("Ошибка запроса разрешения гироскопа:", error);
@@ -141,7 +147,6 @@ export default function HomePage() {
     };
 
     requestPermission();
-
     return cleanup;
   }, [isMobile]);
 
@@ -164,14 +169,16 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон с прогрессивной загрузкой и анимированным затемнением */}
-      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
-        <div
-          className="w-full h-full bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${highResBg})`,
-            opacity: bgOpacity,
-          }}
+      {/* Слой 1: фон с масштабированием */}
+      <ParallaxLayer
+        offset={offsets.layer1}
+        className="absolute inset-0 z-0 overflow-hidden"
+      >
+        <motion.div
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
+          animate={{ scale: bgScale }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
         <motion.div
           className="absolute inset-0 pointer-events-none"
@@ -184,7 +191,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж */}
+      {/* Слой 2: персонаж (статичен) */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
@@ -196,12 +203,7 @@ export default function HomePage() {
             isMobile ? "max-h-[85vh] max-w-none" : "max-h-[80vh]"
           }`}
           style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
-          animate={
-            isMobile && activeColumn === "projects"
-              ? { scale: 0.8, x: "20%", y: "-10%" }
-              : { scale: isMobile ? 1.05 : 1, x: 0, y: 0 }
-          }
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          animate={{ scale: 1 }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
@@ -264,7 +266,11 @@ export default function HomePage() {
                         initial={{ opacity: 0, x: "-100%" }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: "-100%" }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 30,
+                        }}
                         className="absolute left-0 top-0 bottom-0 w-3/4 bg-black/80 backdrop-blur-md border-r border-white/20 p-4 overflow-y-auto z-30"
                       >
                         <button
@@ -273,8 +279,12 @@ export default function HomePage() {
                         >
                           <X className="w-5 h-5" />
                         </button>
-                        <h3 className="text-white text-xl font-bold mb-4">Проекты</h3>
-                        <p className="text-gray-300">Скоро здесь будут мои работы.</p>
+                        <h3 className="text-white text-xl font-bold mb-4">
+                          Проекты
+                        </h3>
+                        <p className="text-gray-300">
+                          Скоро здесь будут мои работы.
+                        </p>
                       </motion.div>
                     ) : (
                       <div className="flex justify-center">
