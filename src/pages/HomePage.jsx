@@ -4,6 +4,7 @@ import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { MessageCircle, FolderGit2, PenTool, X } from "lucide-react";
+import { useClickSound } from '../hooks/useClickSound';
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -23,6 +24,7 @@ export default function HomePage() {
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
+  const playClick = useClickSound();
 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
@@ -34,6 +36,7 @@ export default function HomePage() {
       if (Math.abs(deltaY) < 50) return;
 
       if (deltaY > 0) {
+        playClick();
         if (!showInterface) {
           if (dialogueIndex < dialogues.length - 1) {
             setDialogueIndex((prev) => prev + 1);
@@ -42,7 +45,9 @@ export default function HomePage() {
           }
           if (isMobile && navigator.vibrate) navigator.vibrate(10);
         }
+
       } else {
+        playClick();
         if (showInterface) {
           setShowInterface(false);
           setDialogueIndex(dialogues.length - 1);
@@ -103,20 +108,14 @@ export default function HomePage() {
       const layer3Speed = 0.08;
 
       setGyroOffsets({
-        layer1: { x: normGamma * 20, y: normBeta * 20 },
-        layer2: {
-          x: Math.max(
-            -maxLayer2Shift,
-            Math.min(maxLayer2Shift, normGamma * 30 * layer2Speed)
-          ),
-          y: Math.max(
-            -maxLayer2Shift,
-            Math.min(maxLayer2Shift, normBeta * 30 * layer2Speed)
-          ),
-        },
-        layer3: { x: normGamma * 50, y: normBeta * 50 },
-      });
-    };
+        setGyroOffsets({
+          layer1: { x: normGamma * 30, y: normBeta * 30 },
+          layer2: {
+            x: Math.max(-15, Math.min(15, normGamma * 50 * 0.02)),
+            y: Math.max(-15, Math.min(15, normBeta * 50 * 0.02)),
+          },
+          layer3: { x: normGamma * 80, y: normBeta * 80 },
+        });
 
     const requestPermission = async () => {
       if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -147,6 +146,7 @@ export default function HomePage() {
   }, [isMobile]);
 
   const nextDialogue = () => {
+    playClick(); 
     if (dialogueIndex < dialogues.length - 1) {
       setDialogueIndex((prev) => prev + 1);
     } else {
@@ -194,7 +194,7 @@ export default function HomePage() {
               : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? "0px" : "-35px",
+            marginBottom: isMobile ? "0px" : "-45px",
             transform: isMobile ? "scale(0.8)" : "none",
             transformOrigin: "bottom center", // растягиваем от нижнего края
           }}
