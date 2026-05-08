@@ -24,12 +24,18 @@ export default function HomePage() {
   const [activeColumn, setActiveColumn] = useState(null);
   const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
+  const [globalScale, setGlobalScale] = useState(1); // 1 = норма, 0.7 = отдаление
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
-  // Прогрессивная загрузка качественного фона
+  // Реакция на открытие/закрытие раздела
+  useEffect(() => {
+    setGlobalScale(activeColumn ? 0.5 : 0.8);
+  }, [activeColumn]);
+
+  // Прогрессивная загрузка фона
   useEffect(() => {
     const img = new Image();
     img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
@@ -40,11 +46,10 @@ export default function HomePage() {
         setBgOpacity(1);
       });
     };
-    img.onerror = () => {
-      console.log('Оригинал не загружен, остаёмся на сжатом');
-    };
+    img.onerror = () => console.log("Оригинал не загружен, остаёмся на сжатом");
   }, []);
 
+  // Свайпы и остальные хендлеры без изменений
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -53,7 +58,6 @@ export default function HomePage() {
     (e) => {
       const deltaY = touchStartY.current - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) < 50) return;
-
       if (deltaY > 0) {
         if (!showInterface) {
           if (dialogueIndex < dialogues.length - 1) {
@@ -87,6 +91,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
+  // Гироскоп и определение мобильного (без изменений)
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -101,13 +106,11 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isMobile) return;
-
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
       const gamma = event.gamma || 0;
       const beta = event.beta || 0;
-
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
@@ -127,21 +130,18 @@ export default function HomePage() {
           const permission = await DeviceOrientationEvent.requestPermission();
           if (permission === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
-            cleanup = () =>
-              window.removeEventListener("deviceorientation", handleOrientation);
+            cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
           }
         } catch (error) {
           console.log("Ошибка запроса разрешения гироскопа:", error);
         }
       } else {
         window.addEventListener("deviceorientation", handleOrientation);
-        cleanup = () =>
-          window.removeEventListener("deviceorientation", handleOrientation);
+        cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
       }
     };
 
     requestPermission();
-
     return cleanup;
   }, [isMobile]);
 
@@ -164,20 +164,18 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон с прогрессивной загрузкой и анимированным затемнением */}
+      {/* Слой 1: фон с прогрессивной загрузкой, затемнением и масштабированием */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
-        <div
-          className="w-full h-full bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${highResBg})`,
-            opacity: bgOpacity,
-          }}
+        <motion.div
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${highResBg})` }}
+          animate={{ scale: globalScale }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -196,11 +194,9 @@ export default function HomePage() {
             isMobile ? "max-h-[85vh] max-w-none" : "max-h-[80vh]"
           }`}
           style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
-          animate={
-            isMobile && activeColumn === "projects"
-              ? { scale: 0.8, x: "20%", y: "-10%" }
-              : { scale: isMobile ? 1.05 : 1, x: 0, y: 0 }
-          }
+          animate={{
+            scale: isMobile && !activeColumn ? 0.8 : globalScale,
+          }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
         />
