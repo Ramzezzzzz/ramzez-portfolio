@@ -118,7 +118,7 @@ export default function HomePage() {
           alt="Ramzez"
           className={`object-contain cursor-pointer transition-transform duration-300 ${
             isMobile
-              ? 'max-h-[85vh] hover:scale-100'   // больше на мобилках
+              ? 'max-h-[185vh] hover:scale-190'   // больше на мобилках
               : 'max-h-[80vh] hover:scale-[1.02]'
           }`}
           style={{ marginBottom: isMobile ? '0px' : '-25px' }}
