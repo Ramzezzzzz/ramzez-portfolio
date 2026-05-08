@@ -21,6 +21,51 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null);
 
+  const containerRef = useRef(null);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = useCallback((e) => {
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e) => {
+      const deltaY = touchStartY.current - e.changedTouches[0].clientY;
+      if (Math.abs(deltaY) < 50) return;
+
+      if (deltaY > 0) {
+        if (!showInterface) {
+          if (dialogueIndex < dialogues.length - 1) {
+            setDialogueIndex((prev) => prev + 1);
+          } else {
+            setShowInterface(true);
+          }
+          if (isMobile && navigator.vibrate) navigator.vibrate(10);
+        }
+      } else {
+        if (showInterface) {
+          setShowInterface(false);
+          setDialogueIndex(dialogues.length - 1);
+        } else if (dialogueIndex > 0) {
+          setDialogueIndex((prev) => prev - 1);
+        }
+        if (isMobile && navigator.vibrate) navigator.vibrate(10);
+      }
+    },
+    [dialogueIndex, showInterface, isMobile]
+  );
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener("touchstart", handleTouchStart, { passive: true });
+    el.addEventListener("touchend", handleTouchEnd);
+    return () => {
+      el.removeEventListener("touchstart", handleTouchStart);
+      el.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchEnd]);
+
   // Состояния для гироскопа
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
@@ -113,7 +158,11 @@ export default function HomePage() {
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden bg-black select-none">
+    <div
+      ref={containerRef}
+      className="relative w-full h-dvh overflow-hidden bg-black select-none"
+      style={{ touchAction: isMobile ? "none" : "auto" }}
+    >
       {/* Слой 1: фон + затемняющий радиальный градиент */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
@@ -145,8 +194,8 @@ export default function HomePage() {
               : "max-h-[80vh] hover:scale-[1.02]"
           }`}
           style={{
-            marginBottom: isMobile ? "0px" : "-25px",
-            transform: isMobile ? "scale(1.05)" : "none",
+            marginBottom: isMobile ? "0px" : "-35px",
+            transform: isMobile ? "scale(0.8)" : "none",
             transformOrigin: "bottom center", // растягиваем от нижнего края
           }}
           onClick={nextDialogue}
