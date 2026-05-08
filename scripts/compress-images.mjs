@@ -2,7 +2,6 @@ import imagemin from "imagemin";
 import imageminMozjpeg from "imagemin-mozjpeg";
 import imageminPngquant from "imagemin-pngquant";
 import fs from "fs";
-import path from "path";
 
 const inputDir = "public/images";
 const outputDir = "dist/images";
@@ -11,7 +10,7 @@ const outputDir = "dist/images";
 fs.mkdirSync(outputDir, { recursive: true });
 
 (async () => {
-  // Сжимаем только файлы в корне inputDir, исключая подпапки (originals и др.)
+  // Шаблон только для файлов в корне inputDir, без подпапок
   const files = await imagemin([`${inputDir}/*.{jpg,png,webp}`], {
     destination: outputDir,
     plugins: [

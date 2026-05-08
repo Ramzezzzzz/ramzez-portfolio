@@ -21,7 +21,7 @@ export function useMouseParallax() {
       const maxLayer2Shift = 5;
       // Контент: более живое движение
       const layer3Speed = 0.08;
-      const maxLayer1ShiftY = 15; // пикселей
+      const maxLayer1ShiftY = 5; // пикселей
 
       setOffsets({
         layer1: {
