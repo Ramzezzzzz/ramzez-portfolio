@@ -22,20 +22,22 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null);
-  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
+  const [highResBg, setHighResBg] = useState(
+    `${BASE_URL}images/portfolio_background.png`
+  );
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [bgScale, setBgScale] = useState(1); // 1 = 35mm, 0.4 = 75mm
+  const [bgSize, setBgSize] = useState("cover"); // "cover" или "200%"
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
-  // Смена объектива
+  // Эффект смены объектива
   useEffect(() => {
-    setBgScale(activeColumn ? 0.4 : 1);
+    setBgSize(activeColumn ? "200%" : "cover");
   }, [activeColumn]);
 
-  // Прогрессивная загрузка фона
+  // Прогрессивная загрузка качественного фона
   useEffect(() => {
     const img = new Image();
     img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
@@ -89,7 +91,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп
+  // Гироскоп и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -128,14 +130,19 @@ export default function HomePage() {
           const permission = await DeviceOrientationEvent.requestPermission();
           if (permission === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
-            cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
+            cleanup = () =>
+              window.removeEventListener(
+                "deviceorientation",
+                handleOrientation
+              );
           }
         } catch (error) {
           console.log("Ошибка запроса разрешения гироскопа:", error);
         }
       } else {
         window.addEventListener("deviceorientation", handleOrientation);
-        cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
+        cleanup = () =>
+          window.removeEventListener("deviceorientation", handleOrientation);
       }
     };
 
@@ -162,23 +169,20 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: огромный фон (200vw x 200vh) – не обрезается при scale */}
-      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0 overflow-hidden">
+      {/* Слой 1: фон с эффектом объектива */}
+      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
-          className="absolute"
+          className="absolute inset-0 w-full h-full bg-center"
           style={{
-            width: "200vw",
-            height: "200vh",
-            left: "-50vw",
-            top: "-50vh",
             backgroundImage: `url(${highResBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundSize: bgSize,
+            backgroundRepeat: "no-repeat",
             opacity: bgOpacity,
           }}
-          animate={{ scale: bgScale }}
+          animate={{ backgroundSize: bgSize }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
+        {/* Затемнение */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -206,7 +210,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог + контент */}
+      {/* Слой 3: диалог + карточки проектов (без выезжающей панели) */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
@@ -258,24 +262,44 @@ export default function HomePage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-4 mt-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-4xl">
-                      <GlassCard className="!rounded-2xl">
-                        <h3 className="text-white text-xl font-bold mb-3">Проект 1</h3>
-                        <p className="text-gray-300">Описание первого проекта.</p>
-                      </GlassCard>
-                      <GlassCard className="!rounded-2xl">
-                        <h3 className="text-white text-xl font-bold mb-3">Проект 2</h3>
-                        <p className="text-gray-300">Описание второго проекта.</p>
-                      </GlassCard>
-                    </div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-4xl mx-auto px-4 mt-8"
+                  >
+                    {/* Примеры карточек – замените на реальные проекты */}
+                    <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
+                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <span className="text-white text-sm font-medium">
+                        Проект 1
+                      </span>
+                    </GlassCard>
+                    <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
+                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <span className="text-white text-sm font-medium">
+                        Проект 2
+                      </span>
+                    </GlassCard>
+                    <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
+                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <span className="text-white text-sm font-medium">
+                        Проект 3
+                      </span>
+                    </GlassCard>
+                    <GlassCard className="!rounded-2xl aspect-square flex flex-col items-center justify-center text-center">
+                      <FolderGit2 className="w-8 h-8 text-red-400 mb-2" />
+                      <span className="text-white text-sm font-medium">
+                        Проект 4
+                      </span>
+                    </GlassCard>
                     <button
                       onClick={() => setActiveColumn(null)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
+                      className="col-span-full mt-2 text-red-400 hover:text-red-300 transition-colors"
                     >
                       Скрыть проекты
                     </button>
-                  </div>
+                  </motion.div>
                 )}
               </motion.div>
             )}
