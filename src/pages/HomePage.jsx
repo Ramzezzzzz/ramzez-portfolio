@@ -22,22 +22,18 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null);
-  const [highResBg, setHighResBg] = useState(
-    `${BASE_URL}images/portfolio_background.png`
-  );
+  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [bgScale, setBgScale] = useState(1); // масштаб фона: 1 или 0.4
+  const [bgScale, setBgScale] = useState(1); // 1 → 0.4
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
-  // Переключение масштаба фона при открытии/закрытии раздела
   useEffect(() => {
     setBgScale(activeColumn ? 0.4 : 1);
   }, [activeColumn]);
 
-  // Прогрессивная загрузка качественного фона
   useEffect(() => {
     const img = new Image();
     img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
@@ -49,7 +45,6 @@ export default function HomePage() {
     img.onerror = () => console.log("Оригинал не загружен, остаёмся на сжатом");
   }, []);
 
-  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -91,7 +86,6 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -130,19 +124,14 @@ export default function HomePage() {
           const permission = await DeviceOrientationEvent.requestPermission();
           if (permission === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
-            cleanup = () =>
-              window.removeEventListener(
-                "deviceorientation",
-                handleOrientation
-              );
+            cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
           }
         } catch (error) {
           console.log("Ошибка запроса разрешения гироскопа:", error);
         }
       } else {
         window.addEventListener("deviceorientation", handleOrientation);
-        cleanup = () =>
-          window.removeEventListener("deviceorientation", handleOrientation);
+        cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
       }
     };
 
@@ -169,14 +158,20 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон с масштабированием */}
-      <ParallaxLayer
-        offset={offsets.layer1}
-        className="absolute inset-0 z-0 overflow-hidden"
-      >
+      {/* Слой 1: фон (огромный div, масштабируемый без полей) */}
+      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0 overflow-hidden">
         <motion.div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
+          className="absolute"
+          style={{
+            width: "200vw",
+            height: "200vh",
+            left: "-50vw",
+            top: "-50vh",
+            backgroundImage: `url(${highResBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: bgOpacity,
+          }}
           animate={{ scale: bgScale }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
@@ -203,12 +198,11 @@ export default function HomePage() {
             isMobile ? "max-h-[85vh] max-w-none" : "max-h-[80vh]"
           }`}
           style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
-          animate={{ scale: 1 }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог и интерфейс */}
+      {/* Слой 3: диалог + карточки проектов (без выезжающей панели) */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
@@ -260,53 +254,22 @@ export default function HomePage() {
                     </button>
                   </div>
                 ) : (
-                  <>
-                    {isMobile ? (
-                      <motion.div
-                        initial={{ opacity: 0, x: "-100%" }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: "-100%" }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 300,
-                          damping: 30,
-                        }}
-                        className="absolute left-0 top-0 bottom-0 w-3/4 bg-black/80 backdrop-blur-md border-r border-white/20 p-4 overflow-y-auto z-30"
-                      >
-                        <button
-                          onClick={() => setActiveColumn(null)}
-                          className="absolute top-4 right-4 text-white/60 hover:text-white"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                        <h3 className="text-white text-xl font-bold mb-4">
-                          Проекты
-                        </h3>
-                        <p className="text-gray-300">
-                          Скоро здесь будут мои работы.
-                        </p>
-                      </motion.div>
-                    ) : (
-                      <div className="flex justify-center">
-                        <GlassCard className="max-w-lg w-full relative !rounded-2xl">
-                          <button
-                            onClick={() => setActiveColumn(null)}
-                            className="absolute top-3 right-3 text-white/60 hover:text-white"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
-                          <h3 className="text-white text-xl font-bold mb-3">
-                            {activeColumn === "projects" ? "Проекты" : "Блог"}
-                          </h3>
-                          <p className="text-gray-300">
-                            {activeColumn === "projects"
-                              ? "Скоро здесь будут мои работы."
-                              : "Заметки о разработке."}
-                          </p>
-                        </GlassCard>
-                      </div>
-                    )}
-                  </>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto mt-8">
+                    <GlassCard className="!rounded-2xl">
+                      <h3 className="text-white text-xl font-bold mb-3">Проект 1</h3>
+                      <p className="text-gray-300">Описание первого проекта.</p>
+                    </GlassCard>
+                    <GlassCard className="!rounded-2xl">
+                      <h3 className="text-white text-xl font-bold mb-3">Проект 2</h3>
+                      <p className="text-gray-300">Описание второго проекта.</p>
+                    </GlassCard>
+                    <button
+                      onClick={() => setActiveColumn(null)}
+                      className="col-span-full mt-2 text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Скрыть проекты
+                    </button>
+                  </div>
                 )}
               </motion.div>
             )}
