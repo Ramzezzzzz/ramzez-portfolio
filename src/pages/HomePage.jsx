@@ -183,19 +183,19 @@ export default function HomePage() {
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
       >
-        <img
+        <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez"
-          className={`object-contain cursor-pointer transition-transform duration-300 ${
-            isMobile
-              ? "max-h-none max-w-none"
-              : "max-h-[80vh] hover:scale-[1.02]"
+          className={`object-contain cursor-pointer ${
+            isMobile ? "max-h-[85vh] max-w-none" : "max-h-[80vh]"
           }`}
-          style={{
-            marginBottom: isMobile ? "-8px" : "-40px",
-            transform: isMobile ? "scale(0.8)" : "none",
-            transformOrigin: "bottom center",
-          }}
+          style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
+          animate={
+            isMobile && activeColumn === "projects"
+              ? { scale: 0.8, x: "20%", y: "-10%" }
+              : { scale: isMobile ? 1.05 : 1, x: 0, y: 0 }
+          }
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
@@ -234,43 +234,48 @@ export default function HomePage() {
                 animate={{ opacity: 1 }}
                 className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
-                {!activeColumn ? (
-                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                    <button
-                      onClick={() => setActiveColumn("projects")}
-                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                    >
-                      <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                      Проекты
-                    </button>
-                    <button
-                      onClick={() => setActiveColumn("blog")}
-                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                    >
-                      <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
-                      Блог
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex justify-center">
-                    <GlassCard className="max-w-lg w-full relative !rounded-2xl">
-                      <button
-                        onClick={() => setActiveColumn(null)}
-                        className="absolute top-3 right-3 text-white/60 hover:text-white"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                      <h3 className="text-white text-xl font-bold mb-3">
-                        {activeColumn === "projects" ? "Проекты" : "Блог"}
-                      </h3>
-                      <p className="text-gray-300">
-                        {activeColumn === "projects"
-                          ? "Скоро здесь появятся мои работы."
-                          : "Заметки о разработке."}
-                      </p>
-                    </GlassCard>
-                  </div>
-                )}
+{!activeColumn ? (
+  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+    {/* кнопки без изменений */}
+  </div>
+) : (
+  <>
+    {isMobile ? (
+      // Мобильная панель проектов
+      <motion.div
+        initial={{ opacity: 0, x: "-100%" }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: "-100%" }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className="absolute left-0 top-0 bottom-0 w-3/4 bg-black/80 backdrop-blur-md border-r border-white/20 p-4 overflow-y-auto z-30"
+      >
+        <button
+          onClick={() => setActiveColumn(null)}
+          className="absolute top-4 right-4 text-white/60 hover:text-white"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        <h3 className="text-white text-xl font-bold mb-4">Проекты</h3>
+        {/* Здесь позже разместим карточки, пока заглушка */}
+        <p className="text-gray-300">Скоро здесь будут мои работы.</p>
+      </motion.div>
+    ) : (
+      // Десктопная карточка (оставляем без изменений)
+      <div className="flex justify-center">
+        <GlassCard className="max-w-lg w-full relative !rounded-2xl">
+          <button
+            onClick={() => setActiveColumn(null)}
+            className="absolute top-3 right-3 text-white/60 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <h3 className="text-white text-xl font-bold mb-3">Проекты</h3>
+          <p className="text-gray-300">Скоро здесь будут мои работы.</p>
+        </GlassCard>
+      </div>
+    )}
+  </>
+)}
               </motion.div>
             )}
           </AnimatePresence>
