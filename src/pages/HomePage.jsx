@@ -24,16 +24,18 @@ export default function HomePage() {
   const [activeColumn, setActiveColumn] = useState(null);
   const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [bgScale, setBgScale] = useState(1); // 1 → 0.4
+  const [bgScale, setBgScale] = useState(1); // 1 = 35mm, 0.4 = 75mm
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
+  // Смена объектива
   useEffect(() => {
     setBgScale(activeColumn ? 0.4 : 1);
   }, [activeColumn]);
 
+  // Прогрессивная загрузка фона
   useEffect(() => {
     const img = new Image();
     img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
@@ -45,6 +47,7 @@ export default function HomePage() {
     img.onerror = () => console.log("Оригинал не загружен, остаёмся на сжатом");
   }, []);
 
+  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -86,6 +89,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
+  // Гироскоп
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -158,7 +162,7 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон (огромный div, масштабируемый без полей) */}
+      {/* Слой 1: огромный фон (200vw x 200vh) – не обрезается при scale */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0 overflow-hidden">
         <motion.div
           className="absolute"
@@ -202,7 +206,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог + карточки проектов (без выезжающей панели) */}
+      {/* Слой 3: диалог + контент */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
@@ -254,18 +258,20 @@ export default function HomePage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto mt-8">
-                    <GlassCard className="!rounded-2xl">
-                      <h3 className="text-white text-xl font-bold mb-3">Проект 1</h3>
-                      <p className="text-gray-300">Описание первого проекта.</p>
-                    </GlassCard>
-                    <GlassCard className="!rounded-2xl">
-                      <h3 className="text-white text-xl font-bold mb-3">Проект 2</h3>
-                      <p className="text-gray-300">Описание второго проекта.</p>
-                    </GlassCard>
+                  <div className="flex flex-col items-center gap-4 mt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-4xl">
+                      <GlassCard className="!rounded-2xl">
+                        <h3 className="text-white text-xl font-bold mb-3">Проект 1</h3>
+                        <p className="text-gray-300">Описание первого проекта.</p>
+                      </GlassCard>
+                      <GlassCard className="!rounded-2xl">
+                        <h3 className="text-white text-xl font-bold mb-3">Проект 2</h3>
+                        <p className="text-gray-300">Описание второго проекта.</p>
+                      </GlassCard>
+                    </div>
                     <button
                       onClick={() => setActiveColumn(null)}
-                      className="col-span-full mt-2 text-red-400 hover:text-red-300 transition-colors"
+                      className="text-red-400 hover:text-red-300 transition-colors"
                     >
                       Скрыть проекты
                     </button>
