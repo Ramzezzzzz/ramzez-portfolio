@@ -146,7 +146,7 @@ export default function HomePage() {
           }`}
           style={{
             marginBottom: isMobile ? '0px' : '-25px',
-            transform: isMobile ? 'scale(2.8)' : 'none',
+            transform: isMobile ? 'scale(1.5)' : 'none',
             transformOrigin: 'bottom center', // растягиваем от нижнего края
           }}
           onClick={nextDialogue}
