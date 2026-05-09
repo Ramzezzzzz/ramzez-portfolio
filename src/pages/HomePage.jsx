@@ -153,11 +153,11 @@ export default function HomePage() {
       const normBeta = beta / 180;
 
       // Меняем персонаж только при наклоне > 15°
-      if (gamma > 15) {
-        setActiveImage("right");
-      } else if (gamma < -15) {
-        setActiveImage("left");
-      }
+        if (gamma > 25) {
+          setActiveImage("right");
+        } else if (gamma < -25) {
+          setActiveImage("left");
+        }
 
       // Усиленные смещения (примерно в 1.5–2 раза больше)
       setGyroOffsets({
@@ -196,15 +196,15 @@ export default function HomePage() {
     >
       {/* Кнопки управления */}
       <MuteButton />
-      {isMobile && !gyroPermissionGranted && (
-        <button
-          onClick={requestGyroPermission}
-          className="fixed top-4 left-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
-          aria-label="Активировать движение"
-        >
-          <Smartphone className="w-5 h-5" />
-        </button>
-      )}
+            {isMobile && !gyroPermissionGranted && (
+              <button
+                onClick={requestGyroPermission}
+                className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+                aria-label="Активировать движение"
+              >
+                <Smartphone className="w-5 h-5" />
+              </button>
+            )}
 
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
@@ -238,7 +238,7 @@ export default function HomePage() {
       maxWidth: "none",
       maxHeight: `${personaScale * 100}vh`,
     }}
-    transition={{ duration: 0.5 }}
+    transition={{ duration: 0.7, ease: "easeInOut" }}
     onClick={nextDialogue}
   />
   <motion.img
@@ -254,7 +254,7 @@ export default function HomePage() {
       maxWidth: "none",
       maxHeight: `${personaScale * 100}vh`,
     }}
-    transition={{ duration: 0.5 }}
+    transition={{ duration: 0.7, ease: "easeInOut" }}
     onClick={nextDialogue}
   />
 </ParallaxLayer>
