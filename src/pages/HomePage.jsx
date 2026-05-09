@@ -22,7 +22,9 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeColumn, setActiveColumn] = useState(null); // 'projects' | 'blog' | null
-  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
+  const [highResBg, setHighResBg] = useState(
+    `${BASE_URL}images/portfolio_background.png`
+  );
   const [bgOpacity, setBgOpacity] = useState(1);
 
   const containerRef = useRef(null);
@@ -122,14 +124,19 @@ export default function HomePage() {
           const permission = await DeviceOrientationEvent.requestPermission();
           if (permission === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
-            cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
+            cleanup = () =>
+              window.removeEventListener(
+                "deviceorientation",
+                handleOrientation
+              );
           }
         } catch (error) {
           console.log("Ошибка запроса разрешения гироскопа:", error);
         }
       } else {
         window.addEventListener("deviceorientation", handleOrientation);
-        cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
+        cleanup = () =>
+          window.removeEventListener("deviceorientation", handleOrientation);
       }
     };
 
@@ -171,7 +178,8 @@ export default function HomePage() {
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+            background:
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -190,8 +198,12 @@ export default function HomePage() {
           style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
           animate={{
             maxHeight: activeColumn
-              ? isMobile ? "95vh" : "95vh"
-              : isMobile ? "85vh" : "80vh",
+              ? isMobile
+                ? "95vh"
+                : "95vh"
+              : isMobile
+              ? "185vh"
+              : "180vh",
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
