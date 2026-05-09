@@ -200,7 +200,8 @@ export default function HomePage() {
             height: "100vh", // базовая высота, от которой scale будет отталкиваться
           }}
           animate={{
-            scale: activeColumn ? 1.8 : 1.2, // ← меняйте эти числа, чтобы увеличить/уменьшить персонажа
+            scale: isMobile ? 1.0 : 1.2,   // для обычного режима
+            scale: activeColumn ? 1.8 : (isMobile ? 1.0 : 1.2),   // для зума
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
