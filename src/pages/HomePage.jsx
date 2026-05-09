@@ -5,7 +5,7 @@ import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
-import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
+import { MessageCircle, FolderGit2, PenTool, Smartphone, X } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -21,17 +21,17 @@ export default function HomePage() {
   const { layer1, layer2, layer3 } = useMouseParallax();
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
+  const [activeColumn, setActiveColumn] = useState(null); // 'projects' | 'blog' | null
   const [activeImage, setActiveImage] = useState("right");
   const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
   const [preloaderOpacity, setPreloaderOpacity] = useState(1);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
-
-  const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -44,7 +44,7 @@ export default function HomePage() {
     }
   };
 
-  // Прелоадер (без изменений)
+  // Прелоадер
   useEffect(() => {
     let cancelled = false;
     const startTime = Date.now();
@@ -87,7 +87,6 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
- 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -141,25 +140,19 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Гироскоп с усиленным параллаксом и плавной сменой изображения
   useEffect(() => {
     if (!isMobile || !gyroPermissionGranted) return;
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0;   // влево–вправо
-      const beta = event.beta || 0;     // вперёд–назад
+      const gamma = event.gamma || 0;
+      const beta = event.beta || 0;
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      // Меняем персонаж только при наклоне > 15°
-        if (gamma > 25) {
-          setActiveImage("right");
-        } else if (gamma < -25) {
-          setActiveImage("left");
-        }
+      if (gamma > 25) setActiveImage("right");
+      else if (gamma < -25) setActiveImage("left");
 
-      // Усиленные смещения (примерно в 1.5–2 раза больше)
       setGyroOffsets({
         layer1: { x: normGamma * 50, y: normBeta * 50 },
         layer2: {
@@ -194,22 +187,28 @@ export default function HomePage() {
       className="relative w-full h-dvh overflow-hidden bg-black select-none"
       style={{ touchAction: isMobile ? "none" : "auto" }}
     >
-      {/* Кнопки управления */}
       <MuteButton />
-            {isMobile && !gyroPermissionGranted && (
-              <button
-                onClick={requestGyroPermission}
-                className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
-                aria-label="Активировать движение"
-              >
-                <Smartphone className="w-5 h-5" />
-              </button>
-            )}
+      {isMobile && !gyroPermissionGranted && (
+        <button
+          onClick={requestGyroPermission}
+          className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+          aria-label="Активировать движение"
+        >
+          <Smartphone className="w-5 h-5" />
+        </button>
+      )}
 
+      {/* Слой 1: фон с зумом */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
+          className="absolute inset-0 w-full h-full bg-center"
+          style={{
+            backgroundImage: `url(${highResBg})`,
+            backgroundRepeat: "no-repeat",
+            opacity: bgOpacity,
+          }}
+          animate={{ backgroundSize: activeColumn ? "200%" : "cover" }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
         <motion.div
           className="absolute inset-0 pointer-events-none"
@@ -221,53 +220,51 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-<ParallaxLayer
-  offset={offsets.layer2}
-  className="absolute inset-0 z-10 flex items-end justify-center"
->
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_right.png`}
-    alt="Ramzez right"
-    className="object-contain cursor-pointer"
-    style={{
-      opacity: activeImage === "right" ? 1 : 0,
-      position: "absolute",
-      bottom: 0,
-      left: "50%",
-      transform: "translateX(-50%)",
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-    alt="Ramzez left"
-    className="object-contain cursor-pointer"
-    style={{
-      opacity: activeImage === "left" ? 1 : 0,
-      position: "absolute",
-      bottom: 0,
-      left: "50%",
-      transform: "translateX(-50%)",
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-</ParallaxLayer>
+      {/* Слой 2: персонаж */}
+      <ParallaxLayer
+        offset={offsets.layer2}
+        className="absolute inset-0 z-10 flex items-end justify-center"
+      >
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+          alt="Ramzez right"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "right" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          onClick={nextDialogue}
+        />
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+          alt="Ramzez left"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          onClick={nextDialogue}
+        />
+      </ParallaxLayer>
 
+      {/* Слой 3: диалог и карточки проектов */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
       >
-        <div
-          className={`h-full flex flex-col justify-end items-center px-4 ${
-            isMobile ? "pb-12" : "pb-12 sm:pb-18"
-          }`}
-        >
+        <div className="h-full flex flex-col justify-end items-center px-4 pb-12 sm:pb-18">
           <AnimatePresence mode="wait">
             {!showInterface ? (
               <motion.div
@@ -292,22 +289,67 @@ export default function HomePage() {
                 animate={{ opacity: 1 }}
                 className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                  <button
-                    onClick={() => {}}
-                    className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                  >
-                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Проекты
-                  </button>
-                  <button
-                    onClick={() => {}}
-                    className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                  >
-                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Блог
-                  </button>
-                </div>
+                {!activeColumn ? (
+                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                    <button
+                      onClick={() => setActiveColumn("projects")}
+                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                    >
+                      <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                      Проекты
+                    </button>
+                    <button
+                      onClick={() => setActiveColumn("blog")}
+                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                    >
+                      <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
+                      Блог
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative w-full h-64 mt-4">
+                    {/* Левая колонка проектов */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-2"
+                    >
+                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
+                        <FolderGit2 className="w-5 h-5 text-red-400" />
+                        <span className="text-white text-sm">Проект 1</span>
+                      </GlassCard>
+                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
+                        <FolderGit2 className="w-5 h-5 text-red-400" />
+                        <span className="text-white text-sm">Проект 2</span>
+                      </GlassCard>
+                    </motion.div>
+
+                    {/* Правая колонка проектов */}
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 }}
+                      className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2"
+                    >
+                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
+                        <FolderGit2 className="w-5 h-5 text-red-400" />
+                        <span className="text-white text-sm">Проект 3</span>
+                      </GlassCard>
+                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
+                        <FolderGit2 className="w-5 h-5 text-red-400" />
+                        <span className="text-white text-sm">Проект 4</span>
+                      </GlassCard>
+                    </motion.div>
+
+                    <button
+                      onClick={() => setActiveColumn(null)}
+                      className="absolute bottom-0 left-1/2 -translate-x-1/2 text-red-400 hover:text-red-300 transition-colors"
+                    >
+                      Скрыть проекты
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -319,8 +361,6 @@ export default function HomePage() {
         animate={{ opacity: preloaderOpacity }}
         transition={{ duration: 1.5, ease: "easeInOut" }}
       />
-
-      )}
     </div>
   );
 }
