@@ -6,7 +6,7 @@ import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool, Smartphone, Fingerprint } from "lucide-react";
-import Haptic from "browser-haptic"; // <-- Новый импорт
+import { haptic } from "ios-haptics"; // <-- новый импорт
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -33,7 +33,7 @@ export default function HomePage() {
   const playClick = useClickSound();
 
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
-  const [hapticEnabled, setHapticEnabled] = useState(false); // <-- Используем браузерную тактильную отдачу
+  const [hapticEnabled, setHapticEnabled] = useState(false);
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -47,14 +47,12 @@ export default function HomePage() {
   };
 
   const enableHaptic = () => {
-    if (Haptic.isSupported()) {
-      setHapticEnabled(true);
-    }
+    setHapticEnabled(true);
   };
 
   const triggerHaptic = () => {
     if (hapticEnabled) {
-      Haptic.light(); // Используем лёгкий тактильный отклик
+      haptic(); // один тактильный импульс
     }
   };
 
@@ -117,7 +115,7 @@ export default function HomePage() {
             setShowInterface(true);
           }
           playClick();
-          triggerHaptic(); // <-- Добавлен тактильный отклик
+          triggerHaptic();
         }
       } else {
         if (showInterface) {
@@ -127,7 +125,7 @@ export default function HomePage() {
           setDialogueIndex((prev) => prev - 1);
         }
         playClick();
-        triggerHaptic(); // <-- Добавлен тактильный отклик
+        triggerHaptic();
       }
     },
     [dialogueIndex, showInterface, playClick, hapticEnabled]
@@ -156,25 +154,22 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Гироскоп с усиленным параллаксом и плавной сменой изображения
   useEffect(() => {
     if (!isMobile || !gyroPermissionGranted) return;
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0;   // влево–вправо
-      const beta = event.beta || 0;     // вперёд–назад
+      const gamma = event.gamma || 0;
+      const beta = event.beta || 0;
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      // Меняем персонаж только при наклоне > 15°
-    if (gamma > 25) {
-      setActiveImage("right");
-    } else if (gamma < -25) {
-      setActiveImage("left");
-    }
+      if (gamma > 25) {
+        setActiveImage("right");
+      } else if (gamma < -25) {
+        setActiveImage("left");
+      }
 
-      // Усиленные смещения (примерно в 1.5–2 раза больше)
       setGyroOffsets({
         layer1: { x: normGamma * 50, y: normBeta * 50 },
         layer2: {
@@ -211,26 +206,26 @@ export default function HomePage() {
     >
       {/* Кнопки управления */}
       <MuteButton />
-            {isMobile && !gyroPermissionGranted && (
-              <button
-                onClick={requestGyroPermission}
-                className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
-                aria-label="Активировать движение"
-              >
-                <Smartphone className="w-5 h-5" />
-              </button>
-            )}
+      {isMobile && !gyroPermissionGranted && (
+        <button
+          onClick={requestGyroPermission}
+          className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+          aria-label="Активировать движение"
+        >
+          <Smartphone className="w-5 h-5" />
+        </button>
+      )}
 
-            {/* Новая кнопка для тактильного отклика */}
-            {isMobile && Haptic.isSupported() && !hapticEnabled && (
-              <button
-                onClick={enableHaptic}
-                className="fixed top-[4.5rem] right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
-                aria-label="Включить тактильный отклик"
-              >
-                <Fingerprint className="w-5 h-5" />
-              </button>
-            )}
+      {/* Кнопка тактильного отклика – теперь под кнопкой движения */}
+      {isMobile && !hapticEnabled && (
+        <button
+          onClick={enableHaptic}
+          className="fixed top-24 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+          aria-label="Включить тактильный отклик"
+        >
+          <Fingerprint className="w-5 h-5" />
+        </button>
+      )}
 
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
