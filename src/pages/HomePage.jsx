@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
+import Preloader from "../components/Preloader";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool } from "lucide-react";
@@ -21,7 +22,9 @@ export default function HomePage() {
   const { layer1, layer2, layer3 } = useMouseParallax();
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
-  const [activeImage, setActiveImage] = useState("right"); // "left" или "right"
+  const [activeImage, setActiveImage] = useState("right");
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [assetsReady, setAssetsReady] = useState(false);
   const [highResBg, setHighResBg] = useState(
     `${BASE_URL}images/portfolio_background.png`
   );
@@ -31,19 +34,51 @@ export default function HomePage() {
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
-  // Прогрессивная загрузка качественного фона
   useEffect(() => {
-    const img = new Image();
-    img.src = `${BASE_URL}images/originals/portfolio_background_original.png`;
-    img.onload = () => {
-      setHighResBg(img.src);
-      setBgOpacity(0);
-      requestAnimationFrame(() => setBgOpacity(1));
+    let cancelled = false;
+    const imagesToLoad = [
+      `${BASE_URL}images/originals/portfolio_background_original.png`,
+      `${BASE_URL}images/portfolio_ramzez_right.png`,
+      `${BASE_URL}images/portfolio_ramzez_left.png`,
+    ];
+    let loadedCount = 0;
+
+    imagesToLoad.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = () => {
+        if (!cancelled) {
+          loadedCount++;
+          setLoadingProgress(
+            Math.round((loadedCount / imagesToLoad.length) * 100)
+          );
+          if (loadedCount === imagesToLoad.length) {
+            setHighResBg(
+              `${BASE_URL}images/originals/portfolio_background_original.png`
+            );
+            setBgOpacity(1);
+            setAssetsReady(true);
+          }
+        }
+      };
+      img.onerror = () => {
+        if (!cancelled) {
+          loadedCount++;
+          setLoadingProgress(
+            Math.round((loadedCount / imagesToLoad.length) * 100)
+          );
+          if (loadedCount === imagesToLoad.length) {
+            setAssetsReady(true);
+          }
+        }
+      };
+    });
+
+    return () => {
+      cancelled = true;
     };
-    img.onerror = () => console.log("Оригинал не загружен, остаёмся на сжатом");
   }, []);
 
-  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -85,7 +120,6 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп (включая выбор изображения) и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -103,18 +137,13 @@ export default function HomePage() {
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0; // -90..90 (влево-вправо)
+      const gamma = event.gamma || 0;
       const beta = event.beta || 0;
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      // Выбор изображения в зависимости от наклона
-      if (gamma > 5) {
-        setActiveImage("right");
-      } else if (gamma < -5) {
-        setActiveImage("left");
-      }
-      // (при |gamma| <= 5 остаётся предыдущее)
+      if (gamma > 5) setActiveImage("right");
+      else if (gamma < -5) setActiveImage("left");
 
       setGyroOffsets({
         layer1: { x: normGamma * 30, y: normBeta * 30 },
@@ -162,7 +191,11 @@ export default function HomePage() {
   };
 
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
-  const personaScale = isMobile ? 1.0 : 1.2; // настройка размера
+  const personaScale = isMobile ? 1.0 : 1.2;
+
+  if (!assetsReady) {
+    return <Preloader progress={loadingProgress} />;
+  }
 
   return (
     <div
@@ -172,14 +205,10 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
-          className="absolute inset-0 w-full h-full bg-center bg-cover"
-          style={{
-            backgroundImage: `url(${highResBg})`,
-            opacity: bgOpacity,
-          }}
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
         />
         <motion.div
           className="absolute inset-0 pointer-events-none"
@@ -192,40 +221,32 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж (два изображения с переходами) */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
       >
-        <div className="relative" style={{ height: "100vh", width: "100%" }}>
-          <motion.img
-            src={`${BASE_URL}images/portfolio_ramzez_right.png`}
-            alt="Ramzez right"
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 object-contain"
-            style={{
-              height: "100%",
-              marginBottom: isMobile ? "-5px" : "-40px",
-              scale: personaScale,
-            }}
-            animate={{ opacity: activeImage === "right" ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          />
-          <motion.img
-            src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-            alt="Ramzez left"
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 object-contain"
-            style={{
-              height: "100%",
-              marginBottom: isMobile ? "-5px" : "-40px",
-              scale: personaScale,
-            }}
-            animate={{ opacity: activeImage === "left" ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          />
-        </div>
+        <img
+          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+          alt="Ramzez right"
+          className="object-contain"
+          style={{
+            display: activeImage === "right" ? "block" : "none",
+            height: `${personaScale * 100}vh`,
+            marginBottom: isMobile ? "-5px" : "-40px",
+          }}
+        />
+        <img
+          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+          alt="Ramzez left"
+          className="object-contain"
+          style={{
+            display: activeImage === "left" ? "block" : "none",
+            height: `${personaScale * 100}vh`,
+            marginBottom: isMobile ? "-5px" : "-40px",
+          }}
+        />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог и кнопки */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
@@ -261,14 +282,14 @@ export default function HomePage() {
               >
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                   <button
-                    onClick={() => {}} // заглушка
+                    onClick={() => {}}
                     className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
                   >
                     <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
                     Проекты
                   </button>
                   <button
-                    onClick={() => {}} // заглушка
+                    onClick={() => {}}
                     className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
                   >
                     <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />

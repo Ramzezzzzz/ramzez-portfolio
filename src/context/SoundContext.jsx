@@ -3,10 +3,7 @@ import { createContext, useContext, useState, useEffect } from "react";
 const SoundContext = createContext();
 
 export function SoundProvider({ children }) {
-  const [isMuted, setIsMuted] = useState(() => {
-    const saved = localStorage.getItem('portfolio-sound-muted');
-    return saved ? JSON.parse(saved) : true;   // теперь true = выключено
-  });
+  const [isMuted, setIsMuted] = useState(true); // всегда выключен по умолчанию
 
   useEffect(() => {
     localStorage.setItem("portfolio-sound-muted", JSON.stringify(isMuted));
