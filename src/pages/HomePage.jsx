@@ -199,11 +199,11 @@ export default function HomePage() {
           animate={{
             maxHeight: activeColumn
               ? isMobile
-                ? "95vh"
-                : "95vh"
+                ? "175vh"
+                : "175vh"
               : isMobile
-              ? "185vh"
-              : "180vh",
+              ? "145vh"
+              : "140vh",
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
