@@ -5,7 +5,7 @@ import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
-import { MessageCircle, FolderGit2, PenTool, X } from "lucide-react";
+import { MessageCircle, FolderGit2, PenTool } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -21,7 +21,7 @@ export default function HomePage() {
   const { layer1, layer2, layer3 } = useMouseParallax();
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
-  const [activeColumn, setActiveColumn] = useState(null); // 'projects' | 'blog' | null
+  const [activeImage, setActiveImage] = useState("right"); // "left" или "right"
   const [highResBg, setHighResBg] = useState(
     `${BASE_URL}images/portfolio_background.png`
   );
@@ -85,7 +85,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп и определение мобильного
+  // Гироскоп (включая выбор изображения) и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -103,10 +103,18 @@ export default function HomePage() {
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0;
+      const gamma = event.gamma || 0; // -90..90 (влево-вправо)
       const beta = event.beta || 0;
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
+
+      // Выбор изображения в зависимости от наклона
+      if (gamma > 5) {
+        setActiveImage("right");
+      } else if (gamma < -5) {
+        setActiveImage("left");
+      }
+      // (при |gamma| <= 5 остаётся предыдущее)
 
       setGyroOffsets({
         layer1: { x: normGamma * 30, y: normBeta * 30 },
@@ -154,6 +162,7 @@ export default function HomePage() {
   };
 
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
+  const personaScale = isMobile ? 1.0 : 1.2; // настройка размера
 
   return (
     <div
@@ -163,17 +172,14 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон с зумом (cover → 130%) */}
+      {/* Слой 1: фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
-          className="absolute inset-0 w-full h-full bg-center"
+          className="absolute inset-0 w-full h-full bg-center bg-cover"
           style={{
             backgroundImage: `url(${highResBg})`,
-            backgroundRepeat: "no-repeat",
             opacity: bgOpacity,
           }}
-          animate={{ backgroundSize: activeColumn ? "130%" : "cover" }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
         <motion.div
           className="absolute inset-0 pointer-events-none"
@@ -186,34 +192,49 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж (увеличение max-height) */}
+      {/* Слой 2: персонаж (два изображения с переходами) */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
       >
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
-          alt="Ramzez"
-          className="object-contain cursor-pointer"
-          style={{
-            marginBottom: isMobile ? "-5px" : "-40px",
-            height: "100vh", // базовая высота, от которой scale будет отталкиваться
-          }}
-          animate={{
-            scale: isMobile ? 1.0 : 1.2,   // для обычного режима
-            scale: activeColumn ? 1.8 : (isMobile ? 1.0 : 1.2),   // для зума
-          }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          onClick={nextDialogue}
-        />
+        <div className="relative" style={{ height: "100vh", width: "100%" }}>
+          <motion.img
+            src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+            alt="Ramzez right"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 object-contain"
+            style={{
+              height: "100%",
+              marginBottom: isMobile ? "-5px" : "-40px",
+              scale: personaScale,
+            }}
+            animate={{ opacity: activeImage === "right" ? 1 : 0 }}
+            transition={{ duration: 0.3 }}
+          />
+          <motion.img
+            src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+            alt="Ramzez left"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 object-contain"
+            style={{
+              height: "100%",
+              marginBottom: isMobile ? "-5px" : "-40px",
+              scale: personaScale,
+            }}
+            animate={{ opacity: activeImage === "left" ? 1 : 0 }}
+            transition={{ duration: 0.3 }}
+          />
+        </div>
       </ParallaxLayer>
 
-      {/* Слой 3: интерфейс + карточки по бокам */}
+      {/* Слой 3: диалог и кнопки */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
       >
-        <div className="h-full flex flex-col justify-end items-center px-4 pb-12 sm:pb-18">
+        <div
+          className={`h-full flex flex-col justify-end items-center px-4 ${
+            isMobile ? "pb-12" : "pb-12 sm:pb-18"
+          }`}
+        >
           <AnimatePresence mode="wait">
             {!showInterface ? (
               <motion.div
@@ -236,70 +257,24 @@ export default function HomePage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="pointer-events-auto w-full max-w-7xl mx-auto"
+                className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
-                {!activeColumn ? (
-                  <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                    <button
-                      onClick={() => setActiveColumn("projects")}
-                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                    >
-                      <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                      Проекты
-                    </button>
-                    <button
-                      onClick={() => setActiveColumn("blog")}
-                      className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                    >
-                      <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
-                      Блог
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative w-full h-64 mt-4">
-                    {/* Левая колонка проектов */}
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-2"
-                    >
-                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
-                        <FolderGit2 className="w-5 h-5 text-red-400" />
-                        <span className="text-white text-sm">Проект 1</span>
-                      </GlassCard>
-                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
-                        <FolderGit2 className="w-5 h-5 text-red-400" />
-                        <span className="text-white text-sm">Проект 2</span>
-                      </GlassCard>
-                    </motion.div>
-
-                    {/* Правая колонка проектов */}
-                    <motion.div
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2 }}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2"
-                    >
-                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
-                        <FolderGit2 className="w-5 h-5 text-red-400" />
-                        <span className="text-white text-sm">Проект 3</span>
-                      </GlassCard>
-                      <GlassCard className="!rounded-2xl p-3 flex items-center gap-2">
-                        <FolderGit2 className="w-5 h-5 text-red-400" />
-                        <span className="text-white text-sm">Проект 4</span>
-                      </GlassCard>
-                    </motion.div>
-
-                    {/* Кнопка закрытия */}
-                    <button
-                      onClick={() => setActiveColumn(null)}
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 text-red-400 hover:text-red-300 transition-colors"
-                    >
-                      Скрыть проекты
-                    </button>
-                  </div>
-                )}
+                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                  <button
+                    onClick={() => {}} // заглушка
+                    className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                  >
+                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
+                    Проекты
+                  </button>
+                  <button
+                    onClick={() => {}} // заглушка
+                    className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
+                  >
+                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
+                    Блог
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
