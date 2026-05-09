@@ -195,15 +195,12 @@ export default function HomePage() {
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez"
           className="object-contain cursor-pointer"
-          style={{ marginBottom: isMobile ? "-5px" : "-40px" }}
+          style={{
+            marginBottom: isMobile ? "-5px" : "-40px",
+            height: "100vh", // базовая высота, от которой scale будет отталкиваться
+          }}
           animate={{
-            maxHeight: activeColumn
-              ? isMobile
-                ? "175vh"
-                : "175vh"
-              : isMobile
-              ? "145vh"
-              : "140vh",
+            scale: activeColumn ? 1.8 : 1.2, // ← меняйте эти числа, чтобы увеличить/уменьшить персонажа
           }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           onClick={nextDialogue}
