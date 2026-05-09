@@ -258,21 +258,21 @@ export default function HomePage() {
           }}
           onClick={nextDialogue}
         />
-      <motion.img
-        src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-        alt="Ramzez right"
-        className="object-contain cursor-pointer"
-        style={{
-          opacity: activeImage === "right" ? 1 : 0,
-          position: "absolute",
-          bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          maxWidth: "none", // ← разрешаем быть шире экрана
-          maxHeight: `${personaScale * 100}vh`,
-        }}
-        onClick={nextDialogue}
-      />
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+          alt="Ramzez right"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none", // ← разрешаем быть шире экрана
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          onClick={nextDialogue}
+        />
       </ParallaxLayer>
 
       {/* Слой 3: диалог и кнопки */}
