@@ -5,7 +5,7 @@ import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
-import { MessageCircle, FolderGit2, PenTool } from "lucide-react";
+import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -44,6 +44,7 @@ export default function HomePage() {
     }
   };
 
+  // Прелоадер (без изменений)
   useEffect(() => {
     let cancelled = false;
     const startTime = Date.now();
@@ -86,6 +87,7 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
+ 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -139,26 +141,32 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Гироскоп с усиленным параллаксом и плавной сменой изображения
   useEffect(() => {
     if (!isMobile || !gyroPermissionGranted) return;
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0;
-      const beta = event.beta || 0;
+      const gamma = event.gamma || 0;   // влево–вправо
+      const beta = event.beta || 0;     // вперёд–назад
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      if (gamma > 5) setActiveImage("right");
-      else if (gamma < -5) setActiveImage("left");
+      // Меняем персонаж только при наклоне > 15°
+      if (gamma > 15) {
+        setActiveImage("right");
+      } else if (gamma < -15) {
+        setActiveImage("left");
+      }
 
+      // Усиленные смещения (примерно в 1.5–2 раза больше)
       setGyroOffsets({
-        layer1: { x: normGamma * 30, y: normBeta * 30 },
+        layer1: { x: normGamma * 50, y: normBeta * 50 },
         layer2: {
-          x: Math.max(-15, Math.min(15, normGamma * 50 * 0.02)),
-          y: Math.max(-15, Math.min(15, normBeta * 50 * 0.02)),
+          x: Math.max(-20, Math.min(20, normGamma * 80 * 0.02)),
+          y: Math.max(-20, Math.min(20, normBeta * 80 * 0.02)),
         },
-        layer3: { x: normGamma * 80, y: normBeta * 80 },
+        layer3: { x: normGamma * 120, y: normBeta * 120 },
       });
     };
 
@@ -186,7 +194,17 @@ export default function HomePage() {
       className="relative w-full h-dvh overflow-hidden bg-black select-none"
       style={{ touchAction: isMobile ? "none" : "auto" }}
     >
+      {/* Кнопки управления */}
       <MuteButton />
+      {isMobile && !gyroPermissionGranted && (
+        <button
+          onClick={requestGyroPermission}
+          className="fixed top-4 left-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+          aria-label="Активировать движение"
+        >
+          <Smartphone className="w-5 h-5" />
+        </button>
+      )}
 
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
@@ -203,41 +221,43 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      <ParallaxLayer
-        offset={offsets.layer2}
-        className="absolute inset-0 z-10 flex items-end justify-center"
-      >
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
-          alt="Ramzez right"
-          className="object-contain cursor-pointer"
-          style={{
-            opacity: activeImage === "right" ? 1 : 0,
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-          }}
-          onClick={nextDialogue}
-        />
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-          alt="Ramzez left"
-          className="object-contain cursor-pointer"
-          style={{
-            opacity: activeImage === "left" ? 1 : 0,
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-          }}
-          onClick={nextDialogue}
-        />
-      </ParallaxLayer>
+<ParallaxLayer
+  offset={offsets.layer2}
+  className="absolute inset-0 z-10 flex items-end justify-center"
+>
+  <motion.img
+    src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+    alt="Ramzez right"
+    className="object-contain cursor-pointer"
+    style={{
+      opacity: activeImage === "right" ? 1 : 0,
+      position: "absolute",
+      bottom: 0,
+      left: "50%",
+      transform: "translateX(-50%)",
+      maxWidth: "none",
+      maxHeight: `${personaScale * 100}vh`,
+    }}
+    transition={{ duration: 0.5 }}
+    onClick={nextDialogue}
+  />
+  <motion.img
+    src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+    alt="Ramzez left"
+    className="object-contain cursor-pointer"
+    style={{
+      opacity: activeImage === "left" ? 1 : 0,
+      position: "absolute",
+      bottom: 0,
+      left: "50%",
+      transform: "translateX(-50%)",
+      maxWidth: "none",
+      maxHeight: `${personaScale * 100}vh`,
+    }}
+    transition={{ duration: 0.5 }}
+    onClick={nextDialogue}
+  />
+</ParallaxLayer>
 
       <ParallaxLayer
         offset={offsets.layer3}
@@ -300,13 +320,6 @@ export default function HomePage() {
         transition={{ duration: 1.5, ease: "easeInOut" }}
       />
 
-      {isMobile && !gyroPermissionGranted && (
-        <button
-          onClick={requestGyroPermission}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-white/20 backdrop-blur-md rounded-xl text-white font-semibold"
-        >
-          Активировать движение
-        </button>
       )}
     </div>
   );
