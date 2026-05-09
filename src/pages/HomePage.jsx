@@ -29,11 +29,13 @@ export default function HomePage() {
     `${BASE_URL}images/portfolio_background.png`
   );
   const [bgOpacity, setBgOpacity] = useState(1);
+  const [darkness, setDarkness] = useState(0.8); // стартовое затемнение 0.8, потом уходит до 0.2
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
-  const [initialDarkness, setInitialDarkness] = useState(true);
+
+  // Прелоадер: загружаем изображения, ждём минимум 1.5 секунды
   useEffect(() => {
     let cancelled = false;
     const startTime = Date.now();
@@ -58,9 +60,8 @@ export default function HomePage() {
               `${BASE_URL}images/originals/portfolio_background_original.png`
             );
             setBgOpacity(1);
-            // Минимум 1 секунда показа прелоадера
             const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, 1000 - elapsed);
+            const delay = Math.max(0, 1500 - elapsed); // минимум 1.5 секунды
             setTimeout(() => setShowPreloader(false), delay);
           }
         }
@@ -73,7 +74,7 @@ export default function HomePage() {
           );
           if (loadedCount === imagesToLoad.length) {
             const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, 1000 - elapsed);
+            const delay = Math.max(0, 1500 - elapsed);
             setTimeout(() => setShowPreloader(false), delay);
           }
         }
@@ -85,13 +86,15 @@ export default function HomePage() {
     };
   }, []);
 
+  // После скрытия прелоадера плавно уменьшаем затемнение с 0.8 до 0.2 за 1.5 секунды
   useEffect(() => {
-    if (assetsReady) {
-      const timer = setTimeout(() => setInitialDarkness(false), 100); // даём 100 мс на закрепление 0.8
+    if (!showPreloader) {
+      const timer = setTimeout(() => setDarkness(0.2), 100); // небольшая задержка для начала анимации
       return () => clearTimeout(timer);
     }
-  }, [assetsReady]);
+  }, [showPreloader]);
 
+  // Обработчики свайпов и гироскопа (без изменений)
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -230,12 +233,12 @@ export default function HomePage() {
             background:
               "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ opacity: darkness }}
+          transition={{ duration: 1.5 }}
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж (простое позиционирование) */}
+      {/* Слой 2: персонаж */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
