@@ -33,7 +33,7 @@ export default function HomePage() {
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
-
+  const [initialDarkness, setInitialDarkness] = useState(true);
   useEffect(() => {
     let cancelled = false;
     const startTime = Date.now();
@@ -84,6 +84,13 @@ export default function HomePage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (assetsReady) {
+      const timer = setTimeout(() => setInitialDarkness(false), 100); // даём 100 мс на закрепление 0.8
+      return () => clearTimeout(timer);
+    }
+  }, [assetsReady]);
 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
