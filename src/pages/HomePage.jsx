@@ -194,28 +194,6 @@ export default function HomePage() {
       className="relative w-full h-dvh overflow-hidden bg-black select-none"
       style={{ touchAction: isMobile ? "none" : "auto" }}
     >
-    {/* Прелоадер (анимированный) */}
-        <motion.div
-          className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-4 pointer-events-none"
-          animate={{ opacity: preloaderOpacity }}
-          transition={{ duration: 1, ease: "easeOut" }}
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <div className="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full" />
-          </motion.div>
-          <div className="w-48 h-2 bg-zinc-700 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-red-500 rounded-full"
-              initial={{ width: "0%" }}
-              animate={{ width: `${loadingProgress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </motion.div>
-
       {/* Кнопки управления */}
       <MuteButton />
             {isMobile && !gyroPermissionGranted && (
@@ -233,14 +211,14 @@ export default function HomePage() {
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
         />
-<motion.div
-  className="absolute inset-0 pointer-events-none"
-  style={{
-    background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
-  }}
-  animate={{ opacity: preloaderOpacity === 0 ? 0.3 : 0.8 }}
-  transition={{ duration: 1.5 }}
-/>
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+          }}
+          animate={{ opacity: preloaderOpacity === 0 ? 0.2 : 0.8 }}
+          transition={{ duration: 1.5 }}
+        />
       </ParallaxLayer>
 
 <ParallaxLayer
@@ -336,6 +314,11 @@ export default function HomePage() {
         </div>
       </ParallaxLayer>
 
+      <motion.div
+        className="absolute inset-0 z-50 pointer-events-none bg-black"
+        animate={{ opacity: preloaderOpacity }}
+        transition={{ duration: 1.5, ease: "easeInOut" }}
+      />
 
       )}
     </div>
