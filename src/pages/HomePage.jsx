@@ -5,7 +5,8 @@ import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
-import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
+import { MessageCircle, FolderGit2, PenTool, Smartphone, Fingerprint } from "lucide-react";
+import Haptic from "browser-haptic"; // <-- Новый импорт
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -32,6 +33,7 @@ export default function HomePage() {
   const playClick = useClickSound();
 
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
+  const [hapticEnabled, setHapticEnabled] = useState(false); // <-- Используем браузерную тактильную отдачу
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -41,6 +43,18 @@ export default function HomePage() {
       }
     } else {
       setGyroPermissionGranted(true);
+    }
+  };
+
+  const enableHaptic = () => {
+    if (Haptic.isSupported()) {
+      setHapticEnabled(true);
+    }
+  };
+
+  const triggerHaptic = () => {
+    if (hapticEnabled) {
+      Haptic.light(); // Используем лёгкий тактильный отклик
     }
   };
 
@@ -87,7 +101,6 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
- 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -104,6 +117,7 @@ export default function HomePage() {
             setShowInterface(true);
           }
           playClick();
+          triggerHaptic(); // <-- Добавлен тактильный отклик
         }
       } else {
         if (showInterface) {
@@ -113,9 +127,10 @@ export default function HomePage() {
           setDialogueIndex((prev) => prev - 1);
         }
         playClick();
+        triggerHaptic(); // <-- Добавлен тактильный отклик
       }
     },
-    [dialogueIndex, showInterface, playClick]
+    [dialogueIndex, showInterface, playClick, hapticEnabled]
   );
 
   useEffect(() => {
@@ -206,6 +221,17 @@ export default function HomePage() {
               </button>
             )}
 
+            {/* Новая кнопка для тактильного отклика */}
+            {isMobile && Haptic.isSupported() && !hapticEnabled && (
+              <button
+                onClick={enableHaptic}
+                className="fixed top-[4.5rem] right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+                aria-label="Включить тактильный отклик"
+              >
+                <Fingerprint className="w-5 h-5" />
+              </button>
+            )}
+
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
           className="absolute inset-0 w-full h-full bg-cover bg-center"
@@ -221,43 +247,43 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-<ParallaxLayer
-  offset={offsets.layer2}
-  className="absolute inset-0 z-10 flex items-end justify-center"
->
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_right.png`}
-    alt="Ramzez right"
-    className="object-contain cursor-pointer"
-    style={{
-      opacity: activeImage === "right" ? 1 : 0,
-      position: "absolute",
-      bottom: 0,
-      left: "50%",
-      transform: "translateX(-50%)",
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-    alt="Ramzez left"
-    className="object-contain cursor-pointer"
-    style={{
-      opacity: activeImage === "left" ? 1 : 0,
-      position: "absolute",
-      bottom: 0,
-      left: "50%",
-      transform: "translateX(-50%)",
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-</ParallaxLayer>
+      <ParallaxLayer
+        offset={offsets.layer2}
+        className="absolute inset-0 z-10 flex items-end justify-center"
+      >
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+          alt="Ramzez right"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "right" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          onClick={nextDialogue}
+        />
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+          alt="Ramzez left"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          onClick={nextDialogue}
+        />
+      </ParallaxLayer>
 
       <ParallaxLayer
         offset={offsets.layer3}
@@ -319,8 +345,6 @@ export default function HomePage() {
         animate={{ opacity: preloaderOpacity }}
         transition={{ duration: 1.5, ease: "easeInOut" }}
       />
-
-      )}
     </div>
   );
 }
