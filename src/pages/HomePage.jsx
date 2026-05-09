@@ -205,45 +205,39 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
-        <motion.div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
-        />
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
-          }}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </ParallaxLayer>
-
       <ParallaxLayer
         offset={offsets.layer2}
-        className="absolute inset-0 z-10 flex items-end justify-center pb-2 sm:pb-8"
+        className="absolute inset-0 z-10 flex items-end justify-center"
       >
-        <img
+        <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_right.png`}
           alt="Ramzez right"
-          className="object-contain"
+          className="object-contain cursor-pointer"
           style={{
-            display: activeImage === "right" ? "block" : "none",
-            height: `${personaScale * 100}vh`,
-            marginBottom: isMobile ? "-5px" : "-40px",
+            opacity: activeImage === "right" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "100%",
+            maxHeight: `${personaScale * 100}vh`,
           }}
+          onClick={nextDialogue}
         />
-        <img
+        <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_left.png`}
           alt="Ramzez left"
-          className="object-contain"
+          className="object-contain cursor-pointer"
           style={{
-            display: activeImage === "left" ? "block" : "none",
-            height: `${personaScale * 100}vh`,
-            marginBottom: isMobile ? "-5px" : "-40px",
+            opacity: activeImage === "left" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "100%",
+            maxHeight: `${personaScale * 100}vh`,
           }}
+          onClick={nextDialogue}
         />
       </ParallaxLayer>
 
