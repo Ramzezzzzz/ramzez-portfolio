@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
-import Preloader from "../components/Preloader";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool } from "lucide-react";
@@ -23,19 +22,28 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const [showPreloader, setShowPreloader] = useState(true);
-  const [highResBg, setHighResBg] = useState(
-    `${BASE_URL}images/portfolio_background.png`
-  );
+  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [darkness, setDarkness] = useState(0.8); // стартовое затемнение 0.8, потом уходит до 0.2
+  const [preloaderOpacity, setPreloaderOpacity] = useState(1);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
 
-  // Прелоадер: загружаем изображения, ждём минимум 1.5 секунды
+  const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
+
+  const requestGyroPermission = async () => {
+    if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission === "granted") {
+        setGyroPermissionGranted(true);
+      }
+    } else {
+      setGyroPermissionGranted(true);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     const startTime = Date.now();
@@ -52,49 +60,32 @@ export default function HomePage() {
       img.onload = () => {
         if (!cancelled) {
           loadedCount++;
-          setLoadingProgress(
-            Math.round((loadedCount / imagesToLoad.length) * 100)
-          );
+          setLoadingProgress(Math.round((loadedCount / imagesToLoad.length) * 100));
           if (loadedCount === imagesToLoad.length) {
-            setHighResBg(
-              `${BASE_URL}images/originals/portfolio_background_original.png`
-            );
+            setHighResBg(`${BASE_URL}images/originals/portfolio_background_original.png`);
             setBgOpacity(1);
             const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, 1500 - elapsed); // минимум 1.5 секунды
-            setTimeout(() => setShowPreloader(false), delay);
+            const delay = Math.max(0, 1500 - elapsed);
+            setTimeout(() => setPreloaderOpacity(0), delay);
           }
         }
       };
       img.onerror = () => {
         if (!cancelled) {
           loadedCount++;
-          setLoadingProgress(
-            Math.round((loadedCount / imagesToLoad.length) * 100)
-          );
+          setLoadingProgress(Math.round((loadedCount / imagesToLoad.length) * 100));
           if (loadedCount === imagesToLoad.length) {
             const elapsed = Date.now() - startTime;
             const delay = Math.max(0, 1500 - elapsed);
-            setTimeout(() => setShowPreloader(false), delay);
+            setTimeout(() => setPreloaderOpacity(0), delay);
           }
         }
       };
     });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  // После скрытия прелоадера плавно уменьшаем затемнение с 0.8 до 0.2 за 1.5 секунды
-  useEffect(() => {
-    if (!showPreloader) {
-      const timer = setTimeout(() => setDarkness(0.2), 100); // небольшая задержка для начала анимации
-      return () => clearTimeout(timer);
-    }
-  }, [showPreloader]);
-
-  // Обработчики свайпов и гироскопа (без изменений)
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -149,7 +140,7 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!isMobile) return;
+    if (!isMobile || !gyroPermissionGranted) return;
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
@@ -171,31 +162,11 @@ export default function HomePage() {
       });
     };
 
-    const requestPermission = async () => {
-      if (typeof DeviceOrientationEvent?.requestPermission === "function") {
-        try {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission === "granted") {
-            window.addEventListener("deviceorientation", handleOrientation);
-            cleanup = () =>
-              window.removeEventListener(
-                "deviceorientation",
-                handleOrientation
-              );
-          }
-        } catch (error) {
-          console.log("Ошибка запроса разрешения гироскопа:", error);
-        }
-      } else {
-        window.addEventListener("deviceorientation", handleOrientation);
-        cleanup = () =>
-          window.removeEventListener("deviceorientation", handleOrientation);
-      }
-    };
+    window.addEventListener("deviceorientation", handleOrientation);
+    cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
 
-    requestPermission();
     return cleanup;
-  }, [isMobile]);
+  }, [isMobile, gyroPermissionGranted]);
 
   const nextDialogue = () => {
     playClick();
@@ -209,10 +180,6 @@ export default function HomePage() {
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
   const personaScale = isMobile ? 1.0 : 1.2;
 
-  if (showPreloader) {
-    return <Preloader progress={loadingProgress} />;
-  }
-
   return (
     <div
       ref={containerRef}
@@ -221,7 +188,6 @@ export default function HomePage() {
     >
       <MuteButton />
 
-      {/* Слой 1: фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
           className="absolute inset-0 w-full h-full bg-cover bg-center"
@@ -230,15 +196,13 @@ export default function HomePage() {
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
-          animate={{ opacity: darkness }}
+          animate={{ opacity: preloaderOpacity === 0 ? 0.2 : 0.8 }}
           transition={{ duration: 1.5 }}
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
@@ -253,14 +217,14 @@ export default function HomePage() {
             bottom: 0,
             left: "50%",
             transform: "translateX(-50%)",
-            maxWidth: "none", // ← разрешаем быть шире экрана
+            maxWidth: "none",
             maxHeight: `${personaScale * 100}vh`,
           }}
           onClick={nextDialogue}
         />
         <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-          alt="Ramzez right"
+          alt="Ramzez left"
           className="object-contain cursor-pointer"
           style={{
             opacity: activeImage === "left" ? 1 : 0,
@@ -268,14 +232,13 @@ export default function HomePage() {
             bottom: 0,
             left: "50%",
             transform: "translateX(-50%)",
-            maxWidth: "none", // ← разрешаем быть шире экрана
+            maxWidth: "none",
             maxHeight: `${personaScale * 100}vh`,
           }}
           onClick={nextDialogue}
         />
       </ParallaxLayer>
 
-      {/* Слой 3: диалог и кнопки */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
@@ -330,6 +293,21 @@ export default function HomePage() {
           </AnimatePresence>
         </div>
       </ParallaxLayer>
+
+      <motion.div
+        className="absolute inset-0 z-50 pointer-events-none bg-black"
+        animate={{ opacity: preloaderOpacity }}
+        transition={{ duration: 1.5, ease: "easeInOut" }}
+      />
+
+      {isMobile && !gyroPermissionGranted && (
+        <button
+          onClick={requestGyroPermission}
+          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-white/20 backdrop-blur-md rounded-xl text-white font-semibold"
+        >
+          Активировать движение
+        </button>
+      )}
     </div>
   );
 }
