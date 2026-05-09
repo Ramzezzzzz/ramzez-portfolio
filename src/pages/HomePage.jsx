@@ -24,7 +24,7 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [assetsReady, setAssetsReady] = useState(false);
+  const [showPreloader, setShowPreloader] = useState(true);
   const [highResBg, setHighResBg] = useState(
     `${BASE_URL}images/portfolio_background.png`
   );
@@ -36,6 +36,7 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
+    const startTime = Date.now();
     const imagesToLoad = [
       `${BASE_URL}images/originals/portfolio_background_original.png`,
       `${BASE_URL}images/portfolio_ramzez_right.png`,
@@ -57,7 +58,10 @@ export default function HomePage() {
               `${BASE_URL}images/originals/portfolio_background_original.png`
             );
             setBgOpacity(1);
-            setAssetsReady(true);
+            // Минимум 1 секунда показа прелоадера
+            const elapsed = Date.now() - startTime;
+            const delay = Math.max(0, 1000 - elapsed);
+            setTimeout(() => setShowPreloader(false), delay);
           }
         }
       };
@@ -68,7 +72,9 @@ export default function HomePage() {
             Math.round((loadedCount / imagesToLoad.length) * 100)
           );
           if (loadedCount === imagesToLoad.length) {
-            setAssetsReady(true);
+            const elapsed = Date.now() - startTime;
+            const delay = Math.max(0, 1000 - elapsed);
+            setTimeout(() => setShowPreloader(false), delay);
           }
         }
       };
@@ -193,7 +199,7 @@ export default function HomePage() {
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
   const personaScale = isMobile ? 1.0 : 1.2;
 
-  if (!assetsReady) {
+  if (showPreloader) {
     return <Preloader progress={loadingProgress} />;
   }
 
@@ -205,6 +211,24 @@ export default function HomePage() {
     >
       <MuteButton />
 
+      {/* Слой 1: фон */}
+      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
+        <motion.div
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
+        />
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+          }}
+          animate={{ opacity: [0.3, 1, 0.3] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </ParallaxLayer>
+
+      {/* Слой 2: персонаж (простое позиционирование) */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
@@ -241,6 +265,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
+      {/* Слой 3: диалог и кнопки */}
       <ParallaxLayer
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
