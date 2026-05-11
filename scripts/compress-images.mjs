@@ -9,14 +9,9 @@ const outputDir = 'dist/images';
 fs.mkdirSync(outputDir, { recursive: true });
 
 (async () => {
-  const files = await imagemin(
-    [
-      `${inputDir}/*.{jpg,png,webp}`,
-      `!${inputDir}/originals/**`, // ← исключаем папку с оригиналами
-    ],
-    {
-      destination: outputDir,
-      plugins: [
+const files = await imagemin([`public/images/*.{jpg,png,webp}`], {
+  destination: 'dist/images',
+  plugins: [
         imageminMozjpeg({ quality: 80 }),
         imageminPngquant({ quality: [0.7, 0.9] }),
       ],

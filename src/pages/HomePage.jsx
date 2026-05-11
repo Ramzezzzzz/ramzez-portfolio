@@ -24,8 +24,11 @@ export default function HomePage() {
   const [activeImage, setActiveImage] = useState("right");
   const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [preloaderOpacity, setPreloaderOpacity] = useState(1);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // Прелоадер: opacity затемняющего слоя (0.8 → 0.18)
+  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.8);
+  const [assetsReady, setAssetsReady] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -44,7 +47,7 @@ export default function HomePage() {
     }
   };
 
-  // Прелоадер (без изменений)
+  // Загрузка изображений
   useEffect(() => {
     let cancelled = false;
     const startTime = Date.now();
@@ -65,9 +68,7 @@ export default function HomePage() {
           if (loadedCount === imagesToLoad.length) {
             setHighResBg(`${BASE_URL}images/originals/portfolio_background_original.png`);
             setBgOpacity(1);
-            const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, 1500 - elapsed);
-            setTimeout(() => setPreloaderOpacity(0), delay);
+            setAssetsReady(true);
           }
         }
       };
@@ -76,9 +77,7 @@ export default function HomePage() {
           loadedCount++;
           setLoadingProgress(Math.round((loadedCount / imagesToLoad.length) * 100));
           if (loadedCount === imagesToLoad.length) {
-            const elapsed = Date.now() - startTime;
-            const delay = Math.max(0, 1500 - elapsed);
-            setTimeout(() => setPreloaderOpacity(0), delay);
+            setAssetsReady(true);
           }
         }
       };
@@ -87,7 +86,16 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
- 
+  // Как только всё загружено, плавно снижаем затемнение
+  useEffect(() => {
+    if (assetsReady) {
+      const timer = setTimeout(() => {
+        setDarkOverlayOpacity(0.18); // финальная прозрачность нормальной сцены
+      }, 100); // небольшая задержка для стабильности анимации
+      return () => clearTimeout(timer);
+    }
+  }, [assetsReady]);
+
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -141,25 +149,22 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Гироскоп с усиленным параллаксом и плавной сменой изображения
   useEffect(() => {
     if (!isMobile || !gyroPermissionGranted) return;
     let cleanup = () => {};
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0;   // влево–вправо
-      const beta = event.beta || 0;     // вперёд–назад
+      const gamma = event.gamma || 0;
+      const beta = event.beta || 0;
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      // Меняем персонаж только при наклоне > 15°
-    if (gamma > 25) {
-      setActiveImage("right");
-    } else if (gamma < -25) {
-      setActiveImage("left");
-    }
+      if (gamma > 25) {
+        setActiveImage("right");
+      } else if (gamma < -25) {
+        setActiveImage("left");
+      }
 
-      // Усиленные смещения (примерно в 1.5–2 раза больше)
       setGyroOffsets({
         layer1: { x: normGamma * 50, y: normBeta * 50 },
         layer2: {
@@ -194,70 +199,71 @@ export default function HomePage() {
       className="relative w-full h-dvh overflow-hidden bg-black select-none"
       style={{ touchAction: isMobile ? "none" : "auto" }}
     >
-      {/* Кнопки управления */}
       <MuteButton />
-            {isMobile && !gyroPermissionGranted && (
-              <button
-                onClick={requestGyroPermission}
-                className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
-                aria-label="Активировать движение"
-              >
-                <Smartphone className="w-5 h-5" />
-              </button>
-            )}
+      {isMobile && !gyroPermissionGranted && (
+        <button
+          onClick={requestGyroPermission}
+          className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
+          aria-label="Активировать движение"
+        >
+          <Smartphone className="w-5 h-5" />
+        </button>
+      )}
 
+      {/* Фоновый слой (всегда виден, но с затемнением) */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <motion.div
           className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
         />
+        {/* Затемняющий слой – управляет прелоадером */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
-          animate={{ opacity: preloaderOpacity === 0 ? 0.2 : 0.8 }}
+          animate={{ opacity: darkOverlayOpacity }}
           transition={{ duration: 1.5 }}
         />
       </ParallaxLayer>
 
-<ParallaxLayer
-  offset={offsets.layer2}
-  className="absolute inset-0 z-10 flex items-end justify-center"
->
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_right.png`}
-    alt="Ramzez right"
-    className="object-contain cursor-pointer"
-    style={{
-      opacity: activeImage === "right" ? 1 : 0,
-      position: "absolute",
-      bottom: 0,
-      left: "50%",
-      transform: "translateX(-50%)",
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_left.png`}
-    alt="Ramzez left"
-    className="object-contain cursor-pointer"
-    style={{
-      opacity: activeImage === "left" ? 1 : 0,
-      position: "absolute",
-      bottom: 0,
-      left: "50%",
-      transform: "translateX(-50%)",
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-</ParallaxLayer>
+      <ParallaxLayer
+        offset={offsets.layer2}
+        className="absolute inset-0 z-10 flex items-end justify-center"
+      >
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+          alt="Ramzez right"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "right" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          onClick={nextDialogue}
+        />
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+          alt="Ramzez left"
+          className="object-contain cursor-pointer"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            position: "absolute",
+            bottom: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+          }}
+          transition={{ duration: 0.7, ease: "easeInOut" }}
+          onClick={nextDialogue}
+        />
+      </ParallaxLayer>
 
       <ParallaxLayer
         offset={offsets.layer3}
@@ -313,14 +319,6 @@ export default function HomePage() {
           </AnimatePresence>
         </div>
       </ParallaxLayer>
-
-      <motion.div
-        className="absolute inset-0 z-50 pointer-events-none bg-black"
-        animate={{ opacity: preloaderOpacity }}
-        transition={{ duration: 1.5, ease: "easeInOut" }}
-      />
-
-      )}
     </div>
   );
 }
