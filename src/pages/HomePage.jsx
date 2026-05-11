@@ -232,16 +232,16 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-        {/* Постоянное затемнение (всегда 60%) */}
-        <motion.div
-          className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
-          style={{
-            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
-          }}
-          initial={{ opacity: 0.6 }}
-          animate={{ opacity: 0.6 }}
-          transition={{ duration: 0 }}
-        />
+{/* Постоянное затемнение (усиленный вариант) */}
+            <motion.div
+              className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
+              style={{
+                background: "radial-gradient(ellipse at center, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.98) 100%)",
+              }}
+              initial={{ opacity: 0.6 }}
+              animate={{ opacity: 0.6 }}
+              transition={{ duration: 0 }}
+            />
 
       {/* Чёрный оверлей, который плавно исчезает */}
       <motion.div
