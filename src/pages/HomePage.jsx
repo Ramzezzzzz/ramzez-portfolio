@@ -9,11 +9,11 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-// Новые, чистые тайминги
-const FADE_DURATION = 4000;      // 4 секунды – осветление фона
-const PERSONA_DELAY = 2000;      // 2 секунды – задержка перед появлением персонажа
-const PERSONA_DURATION = 3000;   // 3 секунды – длительность появления персонажа
-const ORIGINAL_LOAD_DELAY = 15000; // 15 секунд – начало загрузки оригиналов
+// Настройки анимаций (меняйте здесь, чтобы подобрать идеал)
+const FADE_DURATION = 4000;         // 4 секунды – осветление фона
+const PERSONA_DELAY = 2000;         // 2 секунды – задержка перед появлением персонажа
+const PERSONA_DURATION = 3000;     // 3 секунды – длительность появления персонажа
+const ORIGINAL_LOAD_DELAY = 12000; // 15 секунд – начало загрузки оригиналов
 
 const dialogues = [
   "Привет! Я Ramzez.",
@@ -34,7 +34,7 @@ export default function HomePage() {
   const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.95);
   const [pulsateActive, setPulsateActive] = useState(false);
 
-  // Персонаж и его оригиналы
+  // Появление персонажа
   const [personaOpacity, setPersonaOpacity] = useState(0);
   const [rightOriginalReady, setRightOriginalReady] = useState(false);
   const [leftOriginalReady, setLeftOriginalReady] = useState(false);
@@ -55,8 +55,6 @@ export default function HomePage() {
       setGyroPermissionGranted(true);
     }
   };
-
-  // ========== ЧИСТЫЕ ТАЙМЕРЫ ЗАГРУЗКИ ==========
 
   // 1. Осветление фона (4 секунды)
   useEffect(() => {
@@ -136,8 +134,7 @@ export default function HomePage() {
     }
   }, [bgOriginalReady]);
 
-  // ========== ОСТАЛЬНАЯ ЛОГИКА (без изменений) ==========
-
+  // Остальная логика (свайпы, гироскоп, диалог) – без изменений
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -254,7 +251,7 @@ export default function HomePage() {
 
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000"
+          className="absolute inset-0 w-full h-full bg-cover bg-center"
           style={{ backgroundImage: `url(${bgImage})`, opacity: 1 }}
         />
         <motion.div
