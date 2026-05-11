@@ -22,11 +22,8 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
-  const [highResBg, setHighResBg] = useState(`${BASE_URL}images/portfolio_background.png`);
+  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [loadingProgress, setLoadingProgress] = useState(0);
-
-  // Прелоадер: opacity затемняющего слоя (0.8 → 0.18)
   const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.8);
   const [assetsReady, setAssetsReady] = useState(false);
 
@@ -47,27 +44,26 @@ export default function HomePage() {
     }
   };
 
-  // Загрузка изображений
+  // Загрузка оригиналов и постепенное осветление
   useEffect(() => {
     let cancelled = false;
-    const startTime = Date.now();
     const imagesToLoad = [
-      `${BASE_URL}images/originals/portfolio_background_original.png`,
-      `${BASE_URL}images/portfolio_ramzez_right.png`,
-      `${BASE_URL}images/portfolio_ramzez_left.png`,
+      { src: `${BASE_URL}images/portfolio_background.png`, name: 'фон' },
+      { src: `${BASE_URL}images/portfolio_ramzez_right.png`, name: 'персонаж (право)' },
+      { src: `${BASE_URL}images/portfolio_ramzez_left.png`, name: 'персонаж (лево)' },
     ];
     let loadedCount = 0;
 
-    imagesToLoad.forEach((src) => {
+    imagesToLoad.forEach(({ src, name }) => {
       const img = new Image();
       img.src = src;
       img.onload = () => {
         if (!cancelled) {
           loadedCount++;
-          setLoadingProgress(Math.round((loadedCount / imagesToLoad.length) * 100));
+          console.log(`✅ Оригинал загружен: ${name}`);
           if (loadedCount === imagesToLoad.length) {
-            setHighResBg(`${BASE_URL}images/originals/portfolio_background_original.png`);
-            setBgOpacity(1);
+            console.log('🎉 Все оригиналы загружены, начинаем осветление');
+            setBgImage(`${BASE_URL}images/portfolio_background.png`);
             setAssetsReady(true);
           }
         }
@@ -75,9 +71,9 @@ export default function HomePage() {
       img.onerror = () => {
         if (!cancelled) {
           loadedCount++;
-          setLoadingProgress(Math.round((loadedCount / imagesToLoad.length) * 100));
+          console.warn(`⚠️ Ошибка загрузки оригинала: ${name}`);
           if (loadedCount === imagesToLoad.length) {
-            setAssetsReady(true);
+            setAssetsReady(true); // продолжаем даже при ошибке
           }
         }
       };
@@ -86,12 +82,12 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
-  // Как только всё загружено, плавно снижаем затемнение
+  // Плавное осветление после загрузки
   useEffect(() => {
     if (assetsReady) {
       const timer = setTimeout(() => {
-        setDarkOverlayOpacity(0.18); // финальная прозрачность нормальной сцены
-      }, 100); // небольшая задержка для стабильности анимации
+        setDarkOverlayOpacity(0.2); // финальная прозрачность
+      }, 100);
       return () => clearTimeout(timer);
     }
   }, [assetsReady]);
@@ -210,20 +206,28 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Фоновый слой (всегда виден, но с затемнением) */}
+      {/* Фоновый слой с прогрессивной загрузкой */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
-        <motion.div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${highResBg})`, opacity: bgOpacity }}
+        <div
+          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-1000"
+          style={{ backgroundImage: `url(${bgImage})`, opacity: bgOpacity }}
         />
-        {/* Затемняющий слой – управляет прелоадером */}
+        {/* Затемнение с пульсацией */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
-          animate={{ opacity: darkOverlayOpacity }}
-          transition={{ duration: 1.5 }}
+          animate={{
+            opacity: assetsReady
+              ? [0.2, 0.25, 0.2]  // лёгкая пульсация после загрузки
+              : darkOverlayOpacity  // плавное осветление во время загрузки
+          }}
+          transition={{
+            duration: assetsReady ? 6 : 1.5,
+            repeat: assetsReady ? Infinity : 0,
+            ease: "easeInOut"
+          }}
         />
       </ParallaxLayer>
 
