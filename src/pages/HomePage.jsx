@@ -9,6 +9,11 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
+// Длительности анимаций
+const PROGRESS_DURATION = 2000; // мс – время осветления фона
+const PERSONA_FADE_IN_DELAY = 1000; // мс – через сколько после старта начать появление персонажа
+const PERSONA_FADE_IN_DURATION = 2000; // мс – длительность появления персонажа
+
 const dialogues = [
   "Привет! Я Ramzez.",
   "Хочешь чаю с чак-чаком?",
@@ -22,10 +27,16 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
-  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`); // стартуем со сжатой
+  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`);
   const [bgOpacity, setBgOpacity] = useState(1);
-  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.8);
-  const [assetsReady, setAssetsReady] = useState(false);
+  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.95); // стартовое сильное затемнение
+  const [personaOpacity, setPersonaOpacity] = useState(0); // персонаж изначально скрыт
+
+  // Флаги готовности оригиналов
+  const [bgOriginalReady, setBgOriginalReady] = useState(false);
+  const [rightOriginalReady, setRightOriginalReady] = useState(false);
+  const [leftOriginalReady, setLeftOriginalReady] = useState(false);
+  const [allOriginalsLoaded, setAllOriginalsLoaded] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -44,55 +55,100 @@ export default function HomePage() {
     }
   };
 
-  // Загрузка оригиналов и подмена фона
+  // Загрузка оригиналов с логированием
   useEffect(() => {
     let cancelled = false;
-    const originalBgPath = `${BASE_URL}images/portfolio_background.png`;
-    const imagesToLoad = [
-      { src: originalBgPath, name: 'фон' },
-      { src: `${BASE_URL}images/portfolio_ramzez_right.png`, name: 'персонаж (право)' },
-      { src: `${BASE_URL}images/portfolio_ramzez_left.png`, name: 'персонаж (лево)' },
-    ];
-    let loadedCount = 0;
+    console.log('🔄 Начинаем загрузку оригиналов...');
 
-    imagesToLoad.forEach(({ src, name }) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        if (!cancelled) {
-          loadedCount++;
-          console.log(`✅ Оригинал загружен: ${name}`);
-          if (loadedCount === imagesToLoad.length) {
-            console.log('🎉 Все оригиналы загружены, подменяем фон...');
-            setBgImage(originalBgPath);   // ← переключение на оригинал
-            setAssetsReady(true);
-            console.log('🔄 Фон заменён на оригинал');
-          }
-        }
-      };
-      img.onerror = () => {
-        if (!cancelled) {
-          loadedCount++;
-          console.warn(`⚠️ Ошибка загрузки оригинала: ${name}`);
-          if (loadedCount === imagesToLoad.length) {
-            setAssetsReady(true); // продолжаем даже при ошибке
-          }
-        }
-      };
-    });
+    const bgImg = new Image();
+    bgImg.src = `${BASE_URL}images/portfolio_background.png`;
+    bgImg.onload = () => {
+      if (!cancelled) {
+        console.log('✅ Оригинал фона загружен');
+        setBgOriginalReady(true);
+      }
+    };
+    bgImg.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала фона');
+      setBgOriginalReady(true);
+    };
+
+    const rightImg = new Image();
+    rightImg.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
+    rightImg.onload = () => {
+      if (!cancelled) {
+        console.log('✅ Оригинал персонажа (право) загружен');
+        setRightOriginalReady(true);
+      }
+    };
+    rightImg.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
+      setRightOriginalReady(true);
+    };
+
+    const leftImg = new Image();
+    leftImg.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
+    leftImg.onload = () => {
+      if (!cancelled) {
+        console.log('✅ Оригинал персонажа (лево) загружен');
+        setLeftOriginalReady(true);
+      }
+    };
+    leftImg.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
+      setLeftOriginalReady(true);
+    };
 
     return () => { cancelled = true; };
   }, []);
 
-  // Плавное осветление после загрузки
+  // Когда все три оригинала готовы, отмечаем это
   useEffect(() => {
-    if (assetsReady) {
-      const timer = setTimeout(() => {
-        setDarkOverlayOpacity(0.2); // финальная прозрачность
-      }, 100);
-      return () => clearTimeout(timer);
+    if (bgOriginalReady && rightOriginalReady && leftOriginalReady) {
+      console.log('🎉 Все оригиналы загружены');
+      setAllOriginalsLoaded(true);
     }
-  }, [assetsReady]);
+  }, [bgOriginalReady, rightOriginalReady, leftOriginalReady]);
+
+  // Этапы прогресса
+  useEffect(() => {
+    if (allOriginalsLoaded) return; // не перезапускаем, если всё уже готово
+
+    const startTime = Date.now();
+    const progressTimer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / PROGRESS_DURATION, 1);
+      // Затемнение убывает от 0.95 до конечного 0.18
+      setDarkOverlayOpacity(0.95 + progress * (0.18 - 0.95));
+      if (progress >= 1) clearInterval(progressTimer);
+    }, 16);
+
+    // Персонаж начинает появляться с задержкой
+    const personaTimer = setTimeout(() => {
+      const personaStartTime = Date.now();
+      const personaInterval = setInterval(() => {
+        const elapsed = Date.now() - personaStartTime;
+        const personaProgress = Math.min(elapsed / PERSONA_FADE_IN_DURATION, 1);
+        setPersonaOpacity(personaProgress);
+        if (personaProgress >= 1) clearInterval(personaInterval);
+      }, 16);
+    }, PERSONA_FADE_IN_DELAY);
+
+    return () => {
+      clearInterval(progressTimer);
+      clearTimeout(personaTimer);
+    };
+  }, [allOriginalsLoaded]);
+
+  // Если все оригиналы загрузились до окончания таймеров, форсируем конечные значения
+  useEffect(() => {
+    if (allOriginalsLoaded) {
+      console.log('✅ Все оригиналы загружены, финализируем анимации');
+      setDarkOverlayOpacity(0.18);
+      setPersonaOpacity(1);
+      setBgImage(`${BASE_URL}images/portfolio_background.png`);
+    }
+  }, [allOriginalsLoaded]);
 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
@@ -211,34 +267,43 @@ export default function HomePage() {
       {/* Фоновый слой с прогрессивной загрузкой */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-1000"
-          style={{ backgroundImage: `url(${bgImage})`, opacity: bgOpacity }}
+          className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url(${bgImage})`,
+            opacity: bgOpacity,
+          }}
         />
-        {/* Затемнение с пульсацией */}
+        {/* Затемнение с пульсацией после загрузки */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
           animate={{
-            opacity: assetsReady
-              ? [0.2, 0.25, 0.2]  // лёгкая пульсация после загрузки
-              : darkOverlayOpacity  // плавное осветление во время загрузки
+            opacity: allOriginalsLoaded
+              ? [0.18, 0.22, 0.18]
+              : darkOverlayOpacity
           }}
           transition={{
-            duration: assetsReady ? 6 : 1.5,
-            repeat: assetsReady ? Infinity : 0,
+            duration: allOriginalsLoaded ? 6 : 1.5,
+            repeat: allOriginalsLoaded ? Infinity : 0,
             ease: "easeInOut"
           }}
         />
       </ParallaxLayer>
 
+      {/* Слой 2: персонаж с отдельным появлением */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
+        style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
       >
         <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_right.png`}
+          src={
+            rightOriginalReady
+              ? `${BASE_URL}images/portfolio_ramzez_right.png`
+              : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
+          }
           alt="Ramzez right"
           className="object-contain cursor-pointer"
           style={{
@@ -254,7 +319,11 @@ export default function HomePage() {
           onClick={nextDialogue}
         />
         <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_left.png`}
+          src={
+            leftOriginalReady
+              ? `${BASE_URL}images/portfolio_ramzez_left.png`
+              : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
+          }
           alt="Ramzez left"
           className="object-contain cursor-pointer"
           style={{
