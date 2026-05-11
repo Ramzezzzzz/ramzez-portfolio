@@ -231,20 +231,16 @@ export default function HomePage() {
             opacity: originalShown ? 0 : 1,
           }}
         />
-        {/* Затемнение с пульсацией (после чёрного экрана) — теперь остаётся на 60% */}
+        {/* Затемнение: после исчезновения черного оверлея остаётся полупрозрачный градиент */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
           animate={{
-            opacity: blackOverlayOpacity === 0 ? [0.6, 0.62, 0.6] : 1,
+            opacity: blackOverlayOpacity === 0 ? 0.6 : 1,
           }}
-          transition={{
-            duration: blackOverlayOpacity === 0 ? 6 : 1.5,
-            repeat: blackOverlayOpacity === 0 ? Infinity : 0,
-            ease: "easeInOut",
-          }}
+          transition={{ duration: 1.5 }}
         />
       </ParallaxLayer>
 
