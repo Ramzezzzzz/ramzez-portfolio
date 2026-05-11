@@ -18,5 +18,5 @@ html, body {
 
 .dark-gradient-fix {
   background: radial-gradient(ellipse at center, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.98) 100%) !important;
-  opacity: 0.6 !important;
+  opacity: 1.2 !important;
 }
