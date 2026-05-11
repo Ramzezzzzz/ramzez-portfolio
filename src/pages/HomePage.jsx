@@ -23,7 +23,6 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
 
-  // Чёрный оверлей (полная чернота) — старт с 1, спад до 0
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [personaOpacity, setPersonaOpacity] = useState(0);
 
@@ -52,13 +51,13 @@ export default function HomePage() {
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / 4000, 1);
-      setBlackOverlayOpacity(1 - progress); // от 1 до 0
+      setBlackOverlayOpacity(1 - progress);
       if (progress >= 1) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Появление персонажа (задержка 1 с, длительность 2 с)
+  // 2. Появление персонажа (1 с задержка, 2 с длительность)
   useEffect(() => {
     const delay = setTimeout(() => {
       const startTime = Date.now();
@@ -72,7 +71,7 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 3. Загрузка оригинала фона с минимальной задержкой 5 с
+  // 3. Загрузка оригинала фона (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
     let imageLoaded = false;
@@ -100,6 +99,7 @@ export default function HomePage() {
 
     return () => clearTimeout(minTimer);
   }, []);
+
 
   // Остальная логика без изменений
   const handleTouchStart = useCallback((e) => {
