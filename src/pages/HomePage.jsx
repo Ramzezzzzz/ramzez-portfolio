@@ -25,7 +25,6 @@ export default function HomePage() {
 
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [personaOpacity, setPersonaOpacity] = useState(0);
-  const [finalDarkOpacity, setFinalDarkOpacity] = useState(1); // ← новое состояние
 
   const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
@@ -46,17 +45,14 @@ export default function HomePage() {
     }
   };
 
-  // 1. Убираем чёрный оверлей (4 секунды), затем устанавливаем финальное затемнение 0.6
+  // 1. Убираем чёрный оверлей (4 секунды)
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / 4000, 1);
       setBlackOverlayOpacity(1 - progress);
-      if (progress >= 1) {
-        clearInterval(timer);
-        setFinalDarkOpacity(0.6); // ← финальное затемнение
-      }
+      if (progress >= 1) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
   }, []);
@@ -236,15 +232,16 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Абсолютное затемнение – теперь через обычный div с transition */}
+      {/* Постоянное затемнение (всегда 60%) */}
       <div
-        className="absolute inset-0 z-5 pointer-events-none transition-opacity duration-1500"
+        className="absolute inset-0 z-5 pointer-events-none"
         style={{
           background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
-          opacity: finalDarkOpacity,
+          opacity: 0.6,
         }}
       />
 
+      {/* Чёрный оверлей, который плавно исчезает */}
       <motion.div
         className="absolute inset-0 z-30 bg-black pointer-events-none"
         animate={{ opacity: blackOverlayOpacity }}
