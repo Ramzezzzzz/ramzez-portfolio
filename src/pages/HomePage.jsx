@@ -25,6 +25,7 @@ export default function HomePage() {
 
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [personaOpacity, setPersonaOpacity] = useState(0);
+  const [finalDarkOpacity, setFinalDarkOpacity] = useState(1); // ← новое состояние
 
   const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
@@ -45,14 +46,17 @@ export default function HomePage() {
     }
   };
 
-  // 1. Убираем чёрный оверлей (4 секунды)
+  // 1. Убираем чёрный оверлей (4 секунды), затем устанавливаем финальное затемнение 0.6
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / 4000, 1);
       setBlackOverlayOpacity(1 - progress);
-      if (progress >= 1) clearInterval(timer);
+      if (progress >= 1) {
+        clearInterval(timer);
+        setFinalDarkOpacity(0.6); // ← финальное затемнение
+      }
     }, 16);
     return () => clearInterval(timer);
   }, []);
@@ -100,8 +104,7 @@ export default function HomePage() {
     return () => clearTimeout(minTimer);
   }, []);
 
-
-  // Остальная логика без изменений
+  // ... (вся остальная логика свайпов, гироскопа, диалога остаётся без изменений)
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -196,7 +199,7 @@ export default function HomePage() {
     }
   };
 
-const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
+  const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
   const personaScale = isMobile ? 1.0 : 1.2;
 
   return (
@@ -233,20 +236,15 @@ const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
         />
       </ParallaxLayer>
 
-      {/* Затемнение: после исчезновения черного оверлея остаётся полупрозрачный градиент */}
-      <motion.div
-        className="absolute inset-0 z-[5] pointer-events-none"
+      {/* Абсолютное затемнение – теперь через обычный div с transition */}
+      <div
+        className="absolute inset-0 z-5 pointer-events-none transition-opacity duration-1500"
         style={{
           background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+          opacity: finalDarkOpacity,
         }}
-        initial={{ opacity: 1 }}
-        animate={{
-          opacity: blackOverlayOpacity === 0 ? 0.6 : 1,
-        }}
-        transition={{ duration: 1.5 }}
       />
 
-      {/* Новый слой: абсолютно чёрный экран, который исчезает */}
       <motion.div
         className="absolute inset-0 z-30 bg-black pointer-events-none"
         animate={{ opacity: blackOverlayOpacity }}
