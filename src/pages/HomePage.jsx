@@ -23,11 +23,10 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
 
-  // Затемнение: старт с 1.0 (полностью чёрный), спад до 0.18
-  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(1.0);
-  const [pulsateActive, setPulsateActive] = useState(false);
-
+  // Чёрный оверлей (полная чернота) — старт с 1, спад до 0
+  const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [personaOpacity, setPersonaOpacity] = useState(0);
+
   const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
 
@@ -47,17 +46,14 @@ export default function HomePage() {
     }
   };
 
-  // 1. Осветление фона (4 секунды)
+  // 1. Убираем чёрный оверлей (4 секунды)
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / 4000, 1);
-      setDarkOverlayOpacity(1.0 + progress * (0.18 - 1.0));
-      if (progress >= 1) {
-        clearInterval(timer);
-        setPulsateActive(true);
-      }
+      setBlackOverlayOpacity(1 - progress); // от 1 до 0
+      if (progress >= 1) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
   }, []);
@@ -102,12 +98,10 @@ export default function HomePage() {
       if (minTimerPassed) setOriginalShown(true);
     };
 
-    return () => {
-      clearTimeout(minTimer);
-    };
+    return () => clearTimeout(minTimer);
   }, []);
 
-  // Остальная логика (свайпы, гироскоп, диалог) без изменений
+  // Логика без изменений
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -222,7 +216,6 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 1: Фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
@@ -238,23 +231,24 @@ export default function HomePage() {
             opacity: originalShown ? 0 : 1,
           }}
         />
+        {/* Затемнение с пульсацией (после чёрного экрана) */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,1) 100%)",
+            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
-          animate={{
-            opacity: pulsateActive ? [0.18, 0.22, 0.18] : darkOverlayOpacity,
-          }}
-          transition={{
-            duration: pulsateActive ? 6 : 1.5,
-            repeat: pulsateActive ? Infinity : 0,
-            ease: "easeInOut"
-          }}
+          animate={{ opacity: blackOverlayOpacity === 0 ? [0.18, 0.22, 0.18] : 1 }}
+          transition={{ duration: blackOverlayOpacity === 0 ? 6 : 1.5, repeat: blackOverlayOpacity === 0 ? Infinity : 0 }}
         />
       </ParallaxLayer>
 
-      {/* Слой 2: Персонаж */}
+      {/* Новый слой: абсолютно чёрный экран, который исчезает */}
+      <motion.div
+        className="absolute inset-0 z-30 bg-black pointer-events-none"
+        animate={{ opacity: blackOverlayOpacity }}
+        transition={{ duration: 1.5 }}
+      />
+
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
@@ -294,7 +288,6 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 3: Интерфейс */}
       <ParallaxLayer offset={offsets.layer3} className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
