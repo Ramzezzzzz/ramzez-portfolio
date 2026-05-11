@@ -13,7 +13,7 @@ fs.mkdirSync(outputDir, { recursive: true });
   const files = await imagemin([`${inputDir}/portfolio_background.png`], {
     destination: outputDir,
     plugins: [
-      imageminPngquant({ quality: [0.01, 0.05] }), // очень низкое качество
+      imageminPngquant({ quality: [0.001, 0.005] }), // очень низкое качество
     ],
   });
   console.log('Файлы агрессивно сжаты:', files.map(f => f.destinationPath).join(', '));
