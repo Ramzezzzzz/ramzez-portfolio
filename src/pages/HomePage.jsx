@@ -9,11 +9,11 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-// Настройки анимаций (меняйте здесь, чтобы подобрать идеал)
-const FADE_DURATION = 4000;         // 4 секунды – осветление фона
-const PERSONA_DELAY = 2000;         // 2 секунды – задержка перед появлением персонажа
-const PERSONA_DURATION = 3000;     // 3 секунды – длительность появления персонажа
-const ORIGINAL_LOAD_DELAY = 12000; // 15 секунд – начало загрузки оригиналов
+// Тайминги – можно менять
+const FADE_DURATION = 4000;          // 4 секунды – осветление фона
+const PERSONA_DELAY = 1000;          // 1 секунда – задержка перед появлением
+const PERSONA_DURATION = 2000;       // 2 секунды – длительность появления
+const ORIGINAL_LOAD_DELAY = 10000;   // 10 секунд – начало загрузки оригиналов
 
 const dialogues = [
   "Привет! Я Ramzez.",
@@ -29,16 +29,16 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
 
-  // Фон и затемнение
-  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`);
-  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.95);
+  // Затемнение
+  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(1.0); // СТРОГО 1.0 – полностью чёрный
   const [pulsateActive, setPulsateActive] = useState(false);
 
   // Появление персонажа
   const [personaOpacity, setPersonaOpacity] = useState(0);
-  const [rightOriginalReady, setRightOriginalReady] = useState(false);
-  const [leftOriginalReady, setLeftOriginalReady] = useState(false);
+
+  // Загрузка оригинала (фон)
   const [bgOriginalReady, setBgOriginalReady] = useState(false);
+  const [originalBgLoaded, setOriginalBgLoaded] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -62,7 +62,7 @@ export default function HomePage() {
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / FADE_DURATION, 1);
-      setDarkOverlayOpacity(0.95 + progress * (0.18 - 0.95));
+      setDarkOverlayOpacity(1.0 + progress * (0.18 - 1.0));
       if (progress >= 1) {
         clearInterval(timer);
         setPulsateActive(true);
@@ -71,7 +71,7 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Появление персонажа (задержка 2 с, затем 3 с)
+  // 2. Появление персонажа (1 с задержки, 2 с длительность)
   useEffect(() => {
     const delay = setTimeout(() => {
       const startTime = Date.now();
@@ -85,56 +85,28 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 3. Загрузка оригиналов через 15 секунд
+  // 3. Загрузка оригинала фона (через 10 с)
   useEffect(() => {
     const delay = setTimeout(() => {
-      console.log('⏳ Начинаем загрузку оригиналов...');
-      const bgImg = new Image();
-      bgImg.src = `${BASE_URL}images/portfolio_background.png`;
-      bgImg.onload = () => {
+      console.log('⏳ Загружаем оригинал фона...');
+      const img = new Image();
+      img.src = `${BASE_URL}images/portfolio_background.png`;
+      img.onload = () => {
         console.log('✅ Оригинал фона загружен');
         setBgOriginalReady(true);
+        // Даём небольшую задержку, чтобы сжатый фон успел немного побыть, как и задумано
+        setTimeout(() => setOriginalBgLoaded(true), 500);
       };
-      bgImg.onerror = () => {
+      img.onerror = () => {
         console.warn('⚠️ Ошибка загрузки оригинала фона');
         setBgOriginalReady(true);
-      };
-
-      const rightImg = new Image();
-      rightImg.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
-      rightImg.onload = () => {
-        console.log('✅ Оригинал персонажа (право) загружен');
-        setRightOriginalReady(true);
-      };
-      rightImg.onerror = () => {
-        console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
-        setRightOriginalReady(true);
-      };
-
-      const leftImg = new Image();
-      leftImg.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
-      leftImg.onload = () => {
-        console.log('✅ Оригинал персонажа (лево) загружен');
-        setLeftOriginalReady(true);
-      };
-      leftImg.onerror = () => {
-        console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
-        setLeftOriginalReady(true);
       };
     }, ORIGINAL_LOAD_DELAY);
 
     return () => clearTimeout(delay);
   }, []);
 
-  // 4. Когда оригинал фона готов – подменяем
-  useEffect(() => {
-    if (bgOriginalReady) {
-      console.log('🖼️ Подмена фона на оригинал');
-      setBgImage(`${BASE_URL}images/portfolio_background.png`);
-    }
-  }, [bgOriginalReady]);
-
-  // Остальная логика (свайпы, гироскоп, диалог) – без изменений
+  // Остальная логика без изменений (свайпы, гироскоп, диалог)
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -249,11 +221,25 @@ export default function HomePage() {
         </button>
       )}
 
+      {/* Слой 1: Фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
+        {/* Оригинал (снизу, появляется плавно) */}
         <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center"
-          style={{ backgroundImage: `url(${bgImage})`, opacity: 1 }}
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
+            opacity: originalBgLoaded ? 1 : 0,
+          }}
         />
+        {/* Сжатый фон (сверху, виден изначально, плавно исчезает) */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url(${BASE_URL}images/compress/portfolio_background.png)`,
+            opacity: originalBgLoaded ? 0 : 1,
+          }}
+        />
+        {/* Затемнение (всегда поверх обоих фонов) */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -270,13 +256,14 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
+      {/* Слой 2: Персонаж */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
         style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
       >
         <motion.img
-          src={rightOriginalReady ? `${BASE_URL}images/portfolio_ramzez_right.png` : `${BASE_URL}images/compress/portfolio_ramzez_right.png`}
+          src={`${BASE_URL}images/compress/portfolio_ramzez_right.png`}
           alt="Ramzez right"
           className="object-contain cursor-pointer"
           style={{
@@ -292,7 +279,7 @@ export default function HomePage() {
           onClick={nextDialogue}
         />
         <motion.img
-          src={leftOriginalReady ? `${BASE_URL}images/portfolio_ramzez_left.png` : `${BASE_URL}images/compress/portfolio_ramzez_left.png`}
+          src={`${BASE_URL}images/compress/portfolio_ramzez_left.png`}
           alt="Ramzez left"
           className="object-contain cursor-pointer"
           style={{
@@ -309,10 +296,8 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      <ParallaxLayer
-        offset={offsets.layer3}
-        className="absolute inset-0 z-20 pointer-events-none"
-      >
+      {/* Слой 3: Интерфейс */}
+      <ParallaxLayer offset={offsets.layer3} className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
             {!showInterface ? (
