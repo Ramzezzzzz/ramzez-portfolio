@@ -22,7 +22,7 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
-  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`);
+  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`); // стартуем со сжатой
   const [bgOpacity, setBgOpacity] = useState(1);
   const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.8);
   const [assetsReady, setAssetsReady] = useState(false);
@@ -44,11 +44,12 @@ export default function HomePage() {
     }
   };
 
-  // Загрузка оригиналов и постепенное осветление
+  // Загрузка оригиналов и подмена фона
   useEffect(() => {
     let cancelled = false;
+    const originalBgPath = `${BASE_URL}images/portfolio_background.png`;
     const imagesToLoad = [
-      { src: `${BASE_URL}images/portfolio_background.png`, name: 'фон' },
+      { src: originalBgPath, name: 'фон' },
       { src: `${BASE_URL}images/portfolio_ramzez_right.png`, name: 'персонаж (право)' },
       { src: `${BASE_URL}images/portfolio_ramzez_left.png`, name: 'персонаж (лево)' },
     ];
@@ -62,9 +63,10 @@ export default function HomePage() {
           loadedCount++;
           console.log(`✅ Оригинал загружен: ${name}`);
           if (loadedCount === imagesToLoad.length) {
-            console.log('🎉 Все оригиналы загружены, начинаем осветление');
-            setBgImage(`${BASE_URL}images/portfolio_background.png`);
+            console.log('🎉 Все оригиналы загружены, подменяем фон...');
+            setBgImage(originalBgPath);   // ← переключение на оригинал
             setAssetsReady(true);
+            console.log('🔄 Фон заменён на оригинал');
           }
         }
       };

@@ -2,21 +2,19 @@ import imagemin from 'imagemin';
 import imageminMozjpeg from 'imagemin-mozjpeg';
 import imageminPngquant from 'imagemin-pngquant';
 import fs from 'fs';
-import path from 'path';
 
 const inputDir = 'public/images';
 const outputDir = 'public/images/compress';
 
-// ”бедимс€, что выходна€ папка существует
 fs.mkdirSync(outputDir, { recursive: true });
 
 (async () => {
-  const files = await imagemin([`${inputDir}/*.{jpg,png,webp}`], {
+  // —жимаем “ќЋ№ ќ фон Ц его подмена будет заметнее
+  const files = await imagemin([`${inputDir}/portfolio_background.png`], {
     destination: outputDir,
     plugins: [
-      imageminMozjpeg({ quality: 80 }),
-      imageminPngquant({ quality: [0.7, 0.9] }),
+      imageminPngquant({ quality: [0.1, 0.3] }), // очень низкое качество
     ],
   });
-  console.log('—жатые изображени€:', files.map(f => path.basename(f.destinationPath)).join(', '));
+  console.log('‘айлы агрессивно сжаты:', files.map(f => f.destinationPath).join(', '));
 })();
