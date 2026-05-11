@@ -9,12 +9,6 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-// Тайминги (можно менять)
-const FADE_DURATION = 4000;          // 4 секунды – осветление фона
-const PERSONA_DELAY = 1000;          // 1 секунда – задержка перед появлением
-const PERSONA_DURATION = 2000;       // 2 секунды – длительность появления
-const ORIGINAL_MIN_DELAY = 5000;     // минимум 5 секунд до подмены
-
 const dialogues = [
   "Привет! Я Ramzez.",
   "Хочешь чаю с чак-чаком?",
@@ -29,16 +23,13 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
 
-  // Затемнение – стартует с 1.0 (полностью чёрный)
+  // Затемнение: старт с 1.0 (полностью чёрный), спад до 0.18
   const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(1.0);
   const [pulsateActive, setPulsateActive] = useState(false);
 
-  // Персонаж
   const [personaOpacity, setPersonaOpacity] = useState(0);
-
-  // Оригинал фона
-  const [originalReady, setOriginalReady] = useState(false);   // загрузился ли
-  const [originalShown, setOriginalShown] = useState(false);   // показываем ли (с учётом минимальной задержки)
+  const [originalReady, setOriginalReady] = useState(false);
+  const [originalShown, setOriginalShown] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -56,12 +47,12 @@ export default function HomePage() {
     }
   };
 
-  // 1. Осветление фона (строго от 1.0 до 0.18)
+  // 1. Осветление фона (4 секунды)
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / FADE_DURATION, 1);
+      const progress = Math.min(elapsed / 4000, 1);
       setDarkOverlayOpacity(1.0 + progress * (0.18 - 1.0));
       if (progress >= 1) {
         clearInterval(timer);
@@ -77,15 +68,15 @@ export default function HomePage() {
       const startTime = Date.now();
       const timer = setInterval(() => {
         const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / PERSONA_DURATION, 1);
+        const progress = Math.min(elapsed / 2000, 1);
         setPersonaOpacity(progress);
         if (progress >= 1) clearInterval(timer);
       }, 16);
-    }, PERSONA_DELAY);
+    }, 1000);
     return () => clearTimeout(delay);
   }, []);
 
-  // 3. Фоновая загрузка оригинала + минимальная задержка 5 с
+  // 3. Загрузка оригинала фона с минимальной задержкой 5 с
   useEffect(() => {
     let minTimerPassed = false;
     let imageLoaded = false;
@@ -93,7 +84,7 @@ export default function HomePage() {
     const minTimer = setTimeout(() => {
       minTimerPassed = true;
       if (imageLoaded) setOriginalShown(true);
-    }, ORIGINAL_MIN_DELAY);
+    }, 5000);
 
     console.log('⏳ Начинаем фоновую загрузку оригинала фона...');
     const img = new Image();
@@ -105,8 +96,8 @@ export default function HomePage() {
       if (minTimerPassed) setOriginalShown(true);
     };
     img.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала, оставляем сжатый');
-      setOriginalReady(true); // чтобы не ждать бесконечно
+      console.warn('⚠️ Ошибка загрузки оригинала');
+      setOriginalReady(true);
       imageLoaded = true;
       if (minTimerPassed) setOriginalShown(true);
     };
@@ -116,7 +107,7 @@ export default function HomePage() {
     };
   }, []);
 
-  // Остальная логика без изменений
+  // Остальная логика (свайпы, гироскоп, диалог) без изменений
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -231,9 +222,8 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 1: Фон с бесшовной подменой оригинала */}
+      {/* Слой 1: Фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
-        {/* Оригинал (снизу, виден после подмены) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -241,7 +231,6 @@ export default function HomePage() {
             opacity: originalShown ? 1 : 0,
           }}
         />
-        {/* Сжатый фон (сверху, виден до подмены) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -249,11 +238,10 @@ export default function HomePage() {
             opacity: originalShown ? 0 : 1,
           }}
         />
-        {/* Затемнение (всегда поверх) */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,1) 100%)",
           }}
           animate={{
             opacity: pulsateActive ? [0.18, 0.22, 0.18] : darkOverlayOpacity,
@@ -266,7 +254,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: Персонаж (сжатый, как и задумано) */}
+      {/* Слой 2: Персонаж */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
