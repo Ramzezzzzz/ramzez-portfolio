@@ -234,7 +234,7 @@ export default function HomePage() {
 
         {/* Постоянное затемнение (всегда 60%) */}
         <motion.div
-          className="absolute inset-0 z-5 pointer-events-none"
+          className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
           style={{
             background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}

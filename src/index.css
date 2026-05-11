@@ -4,6 +4,12 @@ html, body {
     overflow: hidden;
     height: 100%;
   }
+
+  .dark-gradient-fix {
+  opacity: 0.6 !important;
+  transition: none !important;
+  animation: none !important;
+}
   
   #root {
     height: 100%;
