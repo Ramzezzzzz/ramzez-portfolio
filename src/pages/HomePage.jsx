@@ -10,9 +10,9 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
 // Длительности анимаций
-const PROGRESS_DURATION = 20000; // мс – время осветления фона
-const PERSONA_FADE_IN_DELAY = 10000; // мс – через сколько после старта начать появление персонажа
-const PERSONA_FADE_IN_DURATION = 20000; // мс – длительность появления персонажа
+const PROGRESS_DURATION = 200000; // мс – время осветления фона
+const PERSONA_FADE_IN_DELAY = 100000; // мс – через сколько после старта начать появление персонажа
+const PERSONA_FADE_IN_DURATION = 200000; // мс – длительность появления персонажа
 
 const dialogues = [
   "Привет! Я Ramzez.",
