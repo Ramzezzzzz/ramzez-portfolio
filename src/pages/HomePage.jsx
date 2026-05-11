@@ -9,11 +9,11 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-// Тайминги – можно менять
+// Тайминги (можно менять)
 const FADE_DURATION = 4000;          // 4 секунды – осветление фона
 const PERSONA_DELAY = 1000;          // 1 секунда – задержка перед появлением
 const PERSONA_DURATION = 2000;       // 2 секунды – длительность появления
-const ORIGINAL_LOAD_DELAY = 10000;   // 10 секунд – начало загрузки оригиналов
+const ORIGINAL_MIN_DELAY = 5000;     // минимум 5 секунд до подмены
 
 const dialogues = [
   "Привет! Я Ramzez.",
@@ -29,16 +29,16 @@ export default function HomePage() {
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
 
-  // Затемнение
-  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(1.0); // СТРОГО 1.0 – полностью чёрный
+  // Затемнение – стартует с 1.0 (полностью чёрный)
+  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(1.0);
   const [pulsateActive, setPulsateActive] = useState(false);
 
-  // Появление персонажа
+  // Персонаж
   const [personaOpacity, setPersonaOpacity] = useState(0);
 
-  // Загрузка оригинала (фон)
-  const [bgOriginalReady, setBgOriginalReady] = useState(false);
-  const [originalBgLoaded, setOriginalBgLoaded] = useState(false);
+  // Оригинал фона
+  const [originalReady, setOriginalReady] = useState(false);   // загрузился ли
+  const [originalShown, setOriginalShown] = useState(false);   // показываем ли (с учётом минимальной задержки)
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -56,7 +56,7 @@ export default function HomePage() {
     }
   };
 
-  // 1. Осветление фона (4 секунды)
+  // 1. Осветление фона (строго от 1.0 до 0.18)
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
@@ -71,7 +71,7 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Появление персонажа (1 с задержки, 2 с длительность)
+  // 2. Появление персонажа (задержка 1 с, длительность 2 с)
   useEffect(() => {
     const delay = setTimeout(() => {
       const startTime = Date.now();
@@ -85,28 +85,38 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 3. Загрузка оригинала фона (через 10 с)
+  // 3. Фоновая загрузка оригинала + минимальная задержка 5 с
   useEffect(() => {
-    const delay = setTimeout(() => {
-      console.log('⏳ Загружаем оригинал фона...');
-      const img = new Image();
-      img.src = `${BASE_URL}images/portfolio_background.png`;
-      img.onload = () => {
-        console.log('✅ Оригинал фона загружен');
-        setBgOriginalReady(true);
-        // Даём небольшую задержку, чтобы сжатый фон успел немного побыть, как и задумано
-        setTimeout(() => setOriginalBgLoaded(true), 500);
-      };
-      img.onerror = () => {
-        console.warn('⚠️ Ошибка загрузки оригинала фона');
-        setBgOriginalReady(true);
-      };
-    }, ORIGINAL_LOAD_DELAY);
+    let minTimerPassed = false;
+    let imageLoaded = false;
 
-    return () => clearTimeout(delay);
+    const minTimer = setTimeout(() => {
+      minTimerPassed = true;
+      if (imageLoaded) setOriginalShown(true);
+    }, ORIGINAL_MIN_DELAY);
+
+    console.log('⏳ Начинаем фоновую загрузку оригинала фона...');
+    const img = new Image();
+    img.src = `${BASE_URL}images/portfolio_background.png`;
+    img.onload = () => {
+      console.log('✅ Оригинал фона загружен');
+      setOriginalReady(true);
+      imageLoaded = true;
+      if (minTimerPassed) setOriginalShown(true);
+    };
+    img.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала, оставляем сжатый');
+      setOriginalReady(true); // чтобы не ждать бесконечно
+      imageLoaded = true;
+      if (minTimerPassed) setOriginalShown(true);
+    };
+
+    return () => {
+      clearTimeout(minTimer);
+    };
   }, []);
 
-  // Остальная логика без изменений (свайпы, гироскоп, диалог)
+  // Остальная логика без изменений
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -221,25 +231,25 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 1: Фон */}
+      {/* Слой 1: Фон с бесшовной подменой оригинала */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
-        {/* Оригинал (снизу, появляется плавно) */}
+        {/* Оригинал (снизу, виден после подмены) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
             backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
-            opacity: originalBgLoaded ? 1 : 0,
+            opacity: originalShown ? 1 : 0,
           }}
         />
-        {/* Сжатый фон (сверху, виден изначально, плавно исчезает) */}
+        {/* Сжатый фон (сверху, виден до подмены) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
             backgroundImage: `url(${BASE_URL}images/compress/portfolio_background.png)`,
-            opacity: originalBgLoaded ? 0 : 1,
+            opacity: originalShown ? 0 : 1,
           }}
         />
-        {/* Затемнение (всегда поверх обоих фонов) */}
+        {/* Затемнение (всегда поверх) */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -256,7 +266,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: Персонаж */}
+      {/* Слой 2: Персонаж (сжатый, как и задумано) */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
