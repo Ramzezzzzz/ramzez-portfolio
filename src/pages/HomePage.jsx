@@ -9,10 +9,11 @@ import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-// Длительности анимаций
-const PROGRESS_DURATION = 200000; // мс – время осветления фона
-const PERSONA_FADE_IN_DELAY = 100000; // мс – через сколько после старта начать появление персонажа
-const PERSONA_FADE_IN_DURATION = 200000; // мс – длительность появления персонажа
+// Новые, чистые тайминги
+const FADE_DURATION = 4000;      // 4 секунды – осветление фона
+const PERSONA_DELAY = 2000;      // 2 секунды – задержка перед появлением персонажа
+const PERSONA_DURATION = 3000;   // 3 секунды – длительность появления персонажа
+const ORIGINAL_LOAD_DELAY = 15000; // 15 секунд – начало загрузки оригиналов
 
 const dialogues = [
   "Привет! Я Ramzez.",
@@ -27,21 +28,21 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
-  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`);
-  const [bgOpacity, setBgOpacity] = useState(1);
-  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.95); // стартовое сильное затемнение
-  const [personaOpacity, setPersonaOpacity] = useState(0); // персонаж изначально скрыт
 
-  // Флаги готовности оригиналов
-  const [bgOriginalReady, setBgOriginalReady] = useState(false);
+  // Фон и затемнение
+  const [bgImage, setBgImage] = useState(`${BASE_URL}images/compress/portfolio_background.png`);
+  const [darkOverlayOpacity, setDarkOverlayOpacity] = useState(0.95);
+  const [pulsateActive, setPulsateActive] = useState(false);
+
+  // Персонаж и его оригиналы
+  const [personaOpacity, setPersonaOpacity] = useState(0);
   const [rightOriginalReady, setRightOriginalReady] = useState(false);
   const [leftOriginalReady, setLeftOriginalReady] = useState(false);
-  const [allOriginalsLoaded, setAllOriginalsLoaded] = useState(false);
+  const [bgOriginalReady, setBgOriginalReady] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
-
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
 
   const requestGyroPermission = async () => {
@@ -55,100 +56,87 @@ export default function HomePage() {
     }
   };
 
-  // Загрузка оригиналов с логированием
+  // ========== ЧИСТЫЕ ТАЙМЕРЫ ЗАГРУЗКИ ==========
+
+  // 1. Осветление фона (4 секунды)
   useEffect(() => {
-    let cancelled = false;
-    console.log('🔄 Начинаем загрузку оригиналов...');
-
-    const bgImg = new Image();
-    bgImg.src = `${BASE_URL}images/portfolio_background.png`;
-    bgImg.onload = () => {
-      if (!cancelled) {
-        console.log('✅ Оригинал фона загружен');
-        setBgOriginalReady(true);
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / FADE_DURATION, 1);
+      setDarkOverlayOpacity(0.95 + progress * (0.18 - 0.95));
+      if (progress >= 1) {
+        clearInterval(timer);
+        setPulsateActive(true);
       }
-    };
-    bgImg.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала фона');
-      setBgOriginalReady(true);
-    };
-
-    const rightImg = new Image();
-    rightImg.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
-    rightImg.onload = () => {
-      if (!cancelled) {
-        console.log('✅ Оригинал персонажа (право) загружен');
-        setRightOriginalReady(true);
-      }
-    };
-    rightImg.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
-      setRightOriginalReady(true);
-    };
-
-    const leftImg = new Image();
-    leftImg.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
-    leftImg.onload = () => {
-      if (!cancelled) {
-        console.log('✅ Оригинал персонажа (лево) загружен');
-        setLeftOriginalReady(true);
-      }
-    };
-    leftImg.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
-      setLeftOriginalReady(true);
-    };
-
-    return () => { cancelled = true; };
+    }, 16);
+    return () => clearInterval(timer);
   }, []);
 
-  // Когда все три оригинала готовы, отмечаем это
+  // 2. Появление персонажа (задержка 2 с, затем 3 с)
   useEffect(() => {
-    if (bgOriginalReady && rightOriginalReady && leftOriginalReady) {
-      console.log('🎉 Все оригиналы загружены');
-      setAllOriginalsLoaded(true);
-    }
-  }, [bgOriginalReady, rightOriginalReady, leftOriginalReady]);
-
-  // Этапы прогресса
-  useEffect(() => {
-    if (allOriginalsLoaded) return; // не перезапускаем, если всё уже готово
-
-    const startTime = Date.now();
-    const progressTimer = setInterval(() => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / PROGRESS_DURATION, 1);
-      // Затемнение убывает от 0.95 до конечного 0.18
-      setDarkOverlayOpacity(0.95 + progress * (0.18 - 0.95));
-      if (progress >= 1) clearInterval(progressTimer);
-    }, 16);
-
-    // Персонаж начинает появляться с задержкой
-    const personaTimer = setTimeout(() => {
-      const personaStartTime = Date.now();
-      const personaInterval = setInterval(() => {
-        const elapsed = Date.now() - personaStartTime;
-        const personaProgress = Math.min(elapsed / PERSONA_FADE_IN_DURATION, 1);
-        setPersonaOpacity(personaProgress);
-        if (personaProgress >= 1) clearInterval(personaInterval);
+    const delay = setTimeout(() => {
+      const startTime = Date.now();
+      const timer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / PERSONA_DURATION, 1);
+        setPersonaOpacity(progress);
+        if (progress >= 1) clearInterval(timer);
       }, 16);
-    }, PERSONA_FADE_IN_DELAY);
+    }, PERSONA_DELAY);
+    return () => clearTimeout(delay);
+  }, []);
 
-    return () => {
-      clearInterval(progressTimer);
-      clearTimeout(personaTimer);
-    };
-  }, [allOriginalsLoaded]);
-
-  // Если все оригиналы загрузились до окончания таймеров, форсируем конечные значения
+  // 3. Загрузка оригиналов через 15 секунд
   useEffect(() => {
-    if (allOriginalsLoaded) {
-      console.log('✅ Все оригиналы загружены, финализируем анимации');
-      setDarkOverlayOpacity(0.18);
-      setPersonaOpacity(1);
+    const delay = setTimeout(() => {
+      console.log('⏳ Начинаем загрузку оригиналов...');
+      const bgImg = new Image();
+      bgImg.src = `${BASE_URL}images/portfolio_background.png`;
+      bgImg.onload = () => {
+        console.log('✅ Оригинал фона загружен');
+        setBgOriginalReady(true);
+      };
+      bgImg.onerror = () => {
+        console.warn('⚠️ Ошибка загрузки оригинала фона');
+        setBgOriginalReady(true);
+      };
+
+      const rightImg = new Image();
+      rightImg.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
+      rightImg.onload = () => {
+        console.log('✅ Оригинал персонажа (право) загружен');
+        setRightOriginalReady(true);
+      };
+      rightImg.onerror = () => {
+        console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
+        setRightOriginalReady(true);
+      };
+
+      const leftImg = new Image();
+      leftImg.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
+      leftImg.onload = () => {
+        console.log('✅ Оригинал персонажа (лево) загружен');
+        setLeftOriginalReady(true);
+      };
+      leftImg.onerror = () => {
+        console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
+        setLeftOriginalReady(true);
+      };
+    }, ORIGINAL_LOAD_DELAY);
+
+    return () => clearTimeout(delay);
+  }, []);
+
+  // 4. Когда оригинал фона готов – подменяем
+  useEffect(() => {
+    if (bgOriginalReady) {
+      console.log('🖼️ Подмена фона на оригинал');
       setBgImage(`${BASE_URL}images/portfolio_background.png`);
     }
-  }, [allOriginalsLoaded]);
+  }, [bgOriginalReady]);
+
+  // ========== ОСТАЛЬНАЯ ЛОГИКА (без изменений) ==========
 
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
@@ -264,46 +252,34 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Фоновый слой с прогрессивной загрузкой */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${bgImage})`,
-            opacity: bgOpacity,
-          }}
+          style={{ backgroundImage: `url(${bgImage})`, opacity: 1 }}
         />
-        {/* Затемнение с пульсацией после загрузки */}
         <motion.div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
           }}
           animate={{
-            opacity: allOriginalsLoaded
-              ? [0.18, 0.22, 0.18]
-              : darkOverlayOpacity
+            opacity: pulsateActive ? [0.18, 0.22, 0.18] : darkOverlayOpacity,
           }}
           transition={{
-            duration: allOriginalsLoaded ? 6 : 1.5,
-            repeat: allOriginalsLoaded ? Infinity : 0,
+            duration: pulsateActive ? 6 : 1.5,
+            repeat: pulsateActive ? Infinity : 0,
             ease: "easeInOut"
           }}
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж с отдельным появлением */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
         style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
       >
         <motion.img
-          src={
-            rightOriginalReady
-              ? `${BASE_URL}images/portfolio_ramzez_right.png`
-              : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
-          }
+          src={rightOriginalReady ? `${BASE_URL}images/portfolio_ramzez_right.png` : `${BASE_URL}images/compress/portfolio_ramzez_right.png`}
           alt="Ramzez right"
           className="object-contain cursor-pointer"
           style={{
@@ -319,11 +295,7 @@ export default function HomePage() {
           onClick={nextDialogue}
         />
         <motion.img
-          src={
-            leftOriginalReady
-              ? `${BASE_URL}images/portfolio_ramzez_left.png`
-              : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
-          }
+          src={leftOriginalReady ? `${BASE_URL}images/portfolio_ramzez_left.png` : `${BASE_URL}images/compress/portfolio_ramzez_left.png`}
           alt="Ramzez left"
           className="object-contain cursor-pointer"
           style={{
@@ -344,11 +316,7 @@ export default function HomePage() {
         offset={offsets.layer3}
         className="absolute inset-0 z-20 pointer-events-none"
       >
-        <div
-          className={`h-full flex flex-col justify-end items-center px-4 ${
-            isMobile ? "pb-12" : "pb-12 sm:pb-18"
-          }`}
-        >
+        <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
             {!showInterface ? (
               <motion.div
@@ -362,31 +330,17 @@ export default function HomePage() {
               >
                 <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
-                  <p className="text-white text-base sm:text-lg font-medium">
-                    {dialogues[dialogueIndex]}
-                  </p>
+                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[dialogueIndex]}</p>
                 </GlassCard>
               </motion.div>
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="pointer-events-auto w-full max-w-6xl mx-auto"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                  <button
-                    onClick={() => {}}
-                    className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                  >
-                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Проекты
+                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
+                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" /> Проекты
                   </button>
-                  <button
-                    onClick={() => {}}
-                    className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"
-                  >
-                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" />
-                    Блог
+                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
+                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог
                   </button>
                 </div>
               </motion.div>
