@@ -196,7 +196,7 @@ export default function HomePage() {
     }
   };
 
-  const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
+const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
   const personaScale = isMobile ? 1.0 : 1.2;
 
   return (
@@ -231,18 +231,20 @@ export default function HomePage() {
             opacity: originalShown ? 0 : 1,
           }}
         />
-        {/* Затемнение: после исчезновения черного оверлея остаётся полупрозрачный градиент */}
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
-          }}
-          animate={{
-            opacity: blackOverlayOpacity === 0 ? 0.6 : 1,
-          }}
-          transition={{ duration: 1.5 }}
-        />
       </ParallaxLayer>
+
+      {/* Затемнение: после исчезновения черного оверлея остаётся полупрозрачный градиент */}
+      <motion.div
+        className="absolute inset-0 z-[5] pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.95) 100%)",
+        }}
+        initial={{ opacity: 1 }}
+        animate={{
+          opacity: blackOverlayOpacity === 0 ? 0.6 : 1,
+        }}
+        transition={{ duration: 1.5 }}
+      />
 
       {/* Новый слой: абсолютно чёрный экран, который исчезает */}
       <motion.div
