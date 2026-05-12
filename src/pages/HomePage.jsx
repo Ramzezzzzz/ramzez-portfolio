@@ -46,12 +46,13 @@ export default function HomePage() {
     }
   };
 
-  // 1. Прелоадер: чёрный экран + прогресс-бар (4 секунды)
+  // 1. Прелоадер: 2.8 секунды (на 30% быстрее)
   useEffect(() => {
     const startTime = Date.now();
+    const duration = 2800; // 2.8 секунды
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / 4000, 1);
+      const progress = Math.min(elapsed / duration, 1);
       setLoadingProgress(Math.floor(progress * 100));
       setBlackOverlayOpacity(1 - progress);
       if (progress >= 1) {
@@ -62,21 +63,21 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Появление персонажа (0.8 с задержки, 1.2 с длительность)
+  // 2. Появление персонажа начинается сразу после прелоадера (2.8 с)
+  // Длительность появления: 1.2 секунды
   useEffect(() => {
-    const delay = setTimeout(() => {
-      const startTime = Date.now();
-      const timer = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / 1200, 1);
-        setPersonaOpacity(progress);
-        if (progress >= 1) clearInterval(timer);
-      }, 16);
-    }, 800);
-    return () => clearTimeout(delay);
-  }, []);
+    if (preloaderVisible) return;
+    const startTime = Date.now();
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / 1200, 1);
+      setPersonaOpacity(progress);
+      if (progress >= 1) clearInterval(timer);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [preloaderVisible]);
 
-  // 3. Разрешить появление облачка диалога через 4.5 секунды после старта
+  // 3. Диалог появляется через 4.5 секунды после старта (как и было)
   useEffect(() => {
     const delay = setTimeout(() => setAllowDialogue(true), 4500);
     return () => clearTimeout(delay);
@@ -86,7 +87,10 @@ export default function HomePage() {
   useEffect(() => {
     let minTimerPassed = false;
     let imageLoaded = false;
-    const minTimer = setTimeout(() => { minTimerPassed = true; if (imageLoaded) setOriginalShown(true); }, 5000);
+    const minTimer = setTimeout(() => {
+      minTimerPassed = true;
+      if (imageLoaded) setOriginalShown(true);
+    }, 5000);
 
     console.log('⏳ Загружаем оригинал фона...');
     const img = new Image();
@@ -106,7 +110,7 @@ export default function HomePage() {
     return () => clearTimeout(minTimer);
   }, []);
 
-  // Обработчики свайпов
+  // ... (свайпы, гироскоп и остальная логика без изменений)
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -145,7 +149,6 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -241,11 +244,11 @@ export default function HomePage() {
         className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
         style={{
           background: "radial-gradient(ellipse at center, rgba(0,0,0,0.2) 20%, rgba(0,0,0,1) 100%)",
-          opacity: 0.6,  // базовое значение, можно менять через консоль
+          opacity: 0.6,
         }}
       />
 
-      {/* Чёрный оверлей прелоадера + прогресс-бар */}
+      {/* Прелоадер: только чёрный оверлей и прогресс-бар */}
       {preloaderVisible && (
         <motion.div
           className="absolute inset-0 z-30 bg-black flex flex-col items-center justify-center pointer-events-none"
@@ -264,6 +267,7 @@ export default function HomePage() {
         </motion.div>
       )}
 
+      {/* Персонаж скрыт до окончания прелоадера */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
