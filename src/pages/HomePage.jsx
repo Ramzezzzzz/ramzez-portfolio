@@ -85,6 +85,8 @@ useEffect(() => {
     return () => clearTimeout(delay);
   }, []);
 
+
+
   // 4. Загрузка оригинала фона (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
@@ -336,6 +338,37 @@ useEffect(() => {
               </motion.div>
             ) : null}
           </AnimatePresence>
+          {/* Картинки чая и чак-чака (появляются после второго диалога) */}
+{dialogueIndex >= 2 && allowDialogue && (
+  <motion.div
+    className="absolute inset-0 z-15 pointer-events-none"
+    initial="hidden"
+    animate="visible"
+  >
+    <motion.img
+      src={`${BASE_URL}images/tea.png`}
+      alt="Чай"
+      className="absolute w-24 h-24 object-contain"
+      style={{ left: '10%', bottom: '40%' }}
+      variants={{
+        hidden: { opacity: 0, x: -30 },
+        visible: { opacity: 1, x: 0 },
+      }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    />
+    <motion.img
+      src={`${BASE_URL}images/chakchak.png`}
+      alt="Чак-чак"
+      className="absolute w-24 h-24 object-contain"
+      style={{ right: '10%', bottom: '40%' }}
+      variants={{
+        hidden: { opacity: 0, x: 30 },
+        visible: { opacity: 1, x: 0 },
+      }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+    />
+  </motion.div>
+)}
         </div>
       </ParallaxLayer>
     </div>
