@@ -24,7 +24,10 @@ export default function HomePage() {
   const [activeImage, setActiveImage] = useState("right");
 
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [preloaderVisible, setPreloaderVisible] = useState(true);
   const [personaOpacity, setPersonaOpacity] = useState(0);
+  const [allowDialogue, setAllowDialogue] = useState(false);
 
   const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
@@ -37,51 +40,55 @@ export default function HomePage() {
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
       const permission = await DeviceOrientationEvent.requestPermission();
-      if (permission === "granted") {
-        setGyroPermissionGranted(true);
-      }
+      if (permission === "granted") setGyroPermissionGranted(true);
     } else {
       setGyroPermissionGranted(true);
     }
   };
 
-  // 1. Убираем чёрный оверлей (4 секунды)
+  // 1. Прелоадер: чёрный экран + прогресс-бар (4 секунды)
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / 4000, 1);
+      setLoadingProgress(Math.floor(progress * 100));
       setBlackOverlayOpacity(1 - progress);
-      if (progress >= 1) clearInterval(timer);
+      if (progress >= 1) {
+        clearInterval(timer);
+        setPreloaderVisible(false);
+      }
     }, 16);
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Появление персонажа (1 с задержка, 2 с длительность)
+  // 2. Появление персонажа (0.8 с задержки, 1.2 с длительность)
   useEffect(() => {
     const delay = setTimeout(() => {
       const startTime = Date.now();
       const timer = setInterval(() => {
         const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / 2000, 1);
+        const progress = Math.min(elapsed / 1200, 1);
         setPersonaOpacity(progress);
         if (progress >= 1) clearInterval(timer);
       }, 16);
-    }, 1000);
+    }, 800);
     return () => clearTimeout(delay);
   }, []);
 
-  // 3. Загрузка оригинала фона (минимум 5 с)
+  // 3. Разрешить появление облачка диалога через 4.5 секунды после старта
+  useEffect(() => {
+    const delay = setTimeout(() => setAllowDialogue(true), 4500);
+    return () => clearTimeout(delay);
+  }, []);
+
+  // 4. Загрузка оригинала фона (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
     let imageLoaded = false;
+    const minTimer = setTimeout(() => { minTimerPassed = true; if (imageLoaded) setOriginalShown(true); }, 5000);
 
-    const minTimer = setTimeout(() => {
-      minTimerPassed = true;
-      if (imageLoaded) setOriginalShown(true);
-    }, 5000);
-
-    console.log('⏳ Начинаем фоновую загрузку оригинала фона...');
+    console.log('⏳ Загружаем оригинал фона...');
     const img = new Image();
     img.src = `${BASE_URL}images/portfolio_background.png`;
     img.onload = () => {
@@ -96,11 +103,10 @@ export default function HomePage() {
       imageLoaded = true;
       if (minTimerPassed) setOriginalShown(true);
     };
-
     return () => clearTimeout(minTimer);
   }, []);
 
-  // … (логика свайпов, гироскопа и диалога остаётся без изменений)
+  // Обработчики свайпов
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -110,25 +116,22 @@ export default function HomePage() {
       const deltaY = touchStartY.current - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) < 50) return;
       if (deltaY > 0) {
-        if (!showInterface) {
-          if (dialogueIndex < dialogues.length - 1) {
-            setDialogueIndex((prev) => prev + 1);
-          } else {
-            setShowInterface(true);
-          }
+        if (!showInterface && allowDialogue) {
+          if (dialogueIndex < dialogues.length - 1) setDialogueIndex(prev => prev + 1);
+          else setShowInterface(true);
           playClick();
         }
       } else {
         if (showInterface) {
           setShowInterface(false);
           setDialogueIndex(dialogues.length - 1);
-        } else if (dialogueIndex > 0) {
-          setDialogueIndex((prev) => prev - 1);
+        } else if (dialogueIndex > 0 && allowDialogue) {
+          setDialogueIndex(prev => prev - 1);
         }
         playClick();
       }
     },
-    [dialogueIndex, showInterface, playClick]
+    [dialogueIndex, showInterface, playClick, allowDialogue]
   );
 
   useEffect(() => {
@@ -142,6 +145,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
+  // Гироскоп и определение мобильного
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -189,7 +193,7 @@ export default function HomePage() {
   const nextDialogue = () => {
     playClick();
     if (dialogueIndex < dialogues.length - 1) {
-      setDialogueIndex((prev) => prev + 1);
+      setDialogueIndex(prev => prev + 1);
     } else {
       setShowInterface(true);
     }
@@ -232,20 +236,33 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Постоянное затемнение – теперь строго после фоновых слоёв */}
+      {/* Постоянное затемнение (усиленная виньетка) */}
       <div
         className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
         style={{
-          background: "radial-gradient(ellipse at center, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.98) 100%)",
+          background: "radial-gradient(ellipse at center, rgba(0,0,0,0.2) 20%, rgba(0,0,0,1) 100%)",
+          opacity: 0.6,  // базовое значение, можно менять через консоль
         }}
       />
 
-      {/* Чёрный оверлей, который плавно исчезает */}
-      <motion.div
-        className="absolute inset-0 z-30 bg-black pointer-events-none"
-        animate={{ opacity: blackOverlayOpacity }}
-        transition={{ duration: 1.5 }}
-      />
+      {/* Чёрный оверлей прелоадера + прогресс-бар */}
+      {preloaderVisible && (
+        <motion.div
+          className="absolute inset-0 z-30 bg-black flex flex-col items-center justify-center pointer-events-none"
+          animate={{ opacity: blackOverlayOpacity }}
+          transition={{ duration: 1.5 }}
+        >
+          <div className="text-white text-sm mb-4">Загрузка...</div>
+          <div className="w-48 h-2 bg-zinc-700 rounded-full overflow-hidden">
+            <motion.div
+              className="h-full bg-red-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${loadingProgress}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        </motion.div>
+      )}
 
       <ParallaxLayer
         offset={offsets.layer2}
@@ -289,7 +306,7 @@ export default function HomePage() {
       <ParallaxLayer offset={offsets.layer3} className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
-            {!showInterface ? (
+            {!showInterface && allowDialogue ? (
               <motion.div
                 key={dialogueIndex}
                 initial={{ opacity: 0, y: 20 }}
@@ -304,18 +321,14 @@ export default function HomePage() {
                   <p className="text-white text-base sm:text-lg font-medium">{dialogues[dialogueIndex]}</p>
                 </GlassCard>
               </motion.div>
-            ) : (
+            ) : showInterface ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
-                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" /> Проекты
-                  </button>
-                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
-                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог
-                  </button>
+                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"><FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" /> Проекты</button>
+                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"><PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог</button>
                 </div>
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
         </div>
       </ParallaxLayer>
