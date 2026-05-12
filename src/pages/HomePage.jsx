@@ -68,10 +68,12 @@ export default function HomePage() {
 useEffect(() => {
     if (preloaderVisible) return;
     const startTime = Date.now();
+    const duration = 600;
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / 600, 1); // было 1200, теперь 600
-      setPersonaOpacity(progress);
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setPersonaOpacity(eased);
       if (progress >= 1) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
@@ -316,7 +318,7 @@ useEffect(() => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
                 className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
                 onClick={nextDialogue}
               >
