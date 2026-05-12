@@ -65,12 +65,12 @@ export default function HomePage() {
 
   // 2. Появление персонажа начинается сразу после прелоадера (2.8 с)
   // Длительность появления: 1.2 секунды
-  useEffect(() => {
+useEffect(() => {
     if (preloaderVisible) return;
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / 1200, 1);
+      const progress = Math.min(elapsed / 600, 1); // было 1200, теперь 600
       setPersonaOpacity(progress);
       if (progress >= 1) clearInterval(timer);
     }, 16);
