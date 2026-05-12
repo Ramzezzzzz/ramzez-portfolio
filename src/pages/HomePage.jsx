@@ -338,18 +338,23 @@ useEffect(() => {
               </motion.div>
             ) : null}
           </AnimatePresence>
-          {/* Картинки чая и чак-чака (появляются после второго диалога) */}
-{dialogueIndex >= 2 && allowDialogue && (
+{/* Картинки чая и чак-чака */}
+{dialogueIndex >= 2 && !showInterface && allowDialogue && (
   <motion.div
     className="absolute inset-0 z-15 pointer-events-none"
     initial="hidden"
     animate="visible"
+    exit="hidden"
   >
     <motion.img
       src={`${BASE_URL}images/tea.png`}
       alt="Чай"
       className="absolute w-24 h-24 object-contain"
-      style={{ left: '10%', bottom: '40%' }}
+      style={{
+        left: isMobile ? '10%' : '25%',
+        bottom: '40%',
+        filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
+      }}
       variants={{
         hidden: { opacity: 0, x: -30 },
         visible: { opacity: 1, x: 0 },
@@ -360,7 +365,11 @@ useEffect(() => {
       src={`${BASE_URL}images/chakchak.png`}
       alt="Чак-чак"
       className="absolute w-24 h-24 object-contain"
-      style={{ right: '10%', bottom: '40%' }}
+      style={{
+        right: isMobile ? '10%' : '25%',
+        bottom: '40%',
+        filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
+      }}
       variants={{
         hidden: { opacity: 0, x: 30 },
         visible: { opacity: 1, x: 0 },
