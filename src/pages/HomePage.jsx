@@ -46,10 +46,10 @@ export default function HomePage() {
     }
   };
 
-  // 1. Прелоадер: 2.8 секунды (на 30% быстрее)
+  // Прелоадер: 2.8 секунды
   useEffect(() => {
     const startTime = Date.now();
-    const duration = 2800; // 2.8 секунды
+    const duration = 2800;
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -63,31 +63,28 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // 2. Появление персонажа начинается сразу после прелоадера (2.8 с)
-  // Длительность появления: 1.2 секунды
-useEffect(() => {
+  // Появление персонажа (0.6 с)
+  useEffect(() => {
     if (preloaderVisible) return;
     const startTime = Date.now();
     const duration = 600;
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      const eased = 1 - Math.pow(1 - progress, 3);
       setPersonaOpacity(eased);
       if (progress >= 1) clearInterval(timer);
     }, 16);
     return () => clearInterval(timer);
   }, [preloaderVisible]);
 
-  // 3. Диалог появляется через 4.5 секунды после старта (как и было)
+  // Диалог появляется через 4.5 с
   useEffect(() => {
     const delay = setTimeout(() => setAllowDialogue(true), 4500);
     return () => clearTimeout(delay);
   }, []);
 
-
-
-  // 4. Загрузка оригинала фона (минимум 5 с)
+  // Загрузка оригинала фона (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
     let imageLoaded = false;
@@ -114,7 +111,6 @@ useEffect(() => {
     return () => clearTimeout(minTimer);
   }, []);
 
-  // ... (свайпы, гироскоп и остальная логика без изменений)
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -252,7 +248,7 @@ useEffect(() => {
         }}
       />
 
-      {/* Прелоадер: только чёрный оверлей и прогресс-бар */}
+      {/* Прелоадер */}
       {preloaderVisible && (
         <motion.div
           className="absolute inset-0 z-30 bg-black flex flex-col items-center justify-center pointer-events-none"
@@ -271,7 +267,6 @@ useEffect(() => {
         </motion.div>
       )}
 
-      {/* Персонаж скрыт до окончания прелоадера */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
@@ -338,46 +333,47 @@ useEffect(() => {
               </motion.div>
             ) : null}
           </AnimatePresence>
-{/* Картинки чая и чак-чака */}
-{dialogueIndex >= 2 && !showInterface && allowDialogue && (
-  <motion.div
-    className="absolute inset-0 z-15 pointer-events-none"
-    initial="hidden"
-    animate="visible"
-    exit="hidden"
-  >
-    <motion.img
-      src={`${BASE_URL}images/tea.png`}
-      alt="Чай"
-      className="absolute w-24 h-24 object-contain"
-      style={{
-        left: isMobile ? '10%' : '25%',
-        bottom: '40%',
-        filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
-      }}
-      variants={{
-        hidden: { opacity: 0, x: -30 },
-        visible: { opacity: 1, x: 0 },
-      }}
-      transition={{ duration: 0.8, ease: 'easeOut' }}
-    />
-    <motion.img
-      src={`${BASE_URL}images/chakchak.png`}
-      alt="Чак-чак"
-      className="absolute w-24 h-24 object-contain"
-      style={{
-        right: isMobile ? '10%' : '25%',
-        bottom: '40%',
-        filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
-      }}
-      variants={{
-        hidden: { opacity: 0, x: 30 },
-        visible: { opacity: 1, x: 0 },
-      }}
-      transition={{ duration: 0.8, ease: 'easeOut' }}
-    />
-  </motion.div>
-)}
+
+          {/* Угощения */}
+          {dialogueIndex >= 2 && !showInterface && allowDialogue && (
+            <motion.div
+              className="absolute inset-0 z-15 pointer-events-none"
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+            >
+              <motion.img
+                src={`${BASE_URL}images/tea.png`}
+                alt="Чай"
+                className="absolute w-24 h-24 object-contain"
+                style={{
+                  left: isMobile ? '5%' : '20%',
+                  bottom: '40%',
+                  filter: 'drop-shadow(0 0 20px rgba(255,80,80,0.8))',
+                }}
+                variants={{
+                  hidden: { opacity: 0, x: -30 },
+                  visible: { opacity: 1, x: 0 },
+                }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+              <motion.img
+                src={`${BASE_URL}images/chakchak.png`}
+                alt="Чак-чак"
+                className="absolute w-24 h-24 object-contain"
+                style={{
+                  right: isMobile ? '5%' : '20%',
+                  bottom: '40%',
+                  filter: 'drop-shadow(0 0 20px rgba(255,80,80,0.8))',
+                }}
+                variants={{
+                  hidden: { opacity: 0, x: 30 },
+                  visible: { opacity: 1, x: 0 },
+                }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+            </motion.div>
+          )}
         </div>
       </ParallaxLayer>
     </div>
