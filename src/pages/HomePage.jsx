@@ -31,6 +31,7 @@ export default function HomePage() {
 
   const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
+  const [personaOriginalsReady, setPersonaOriginalsReady] = useState(false);
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -82,55 +83,46 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 4. Загрузка оригинала фона и персонажей (минимум 5 с)
+  // 4. Загрузка оригиналов (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
-    let imagesLoaded = 0;
-    const totalImages = 2; // фон + персонаж (право и лево считаем отдельно)
+    let bgLoaded = false;
+    let personaLoaded = false;
+
     const minTimer = setTimeout(() => {
       minTimerPassed = true;
-      if (imagesLoaded >= totalImages) setOriginalShown(true);
+      if (bgLoaded) setOriginalShown(true);
+      if (personaLoaded) setPersonaOriginalsReady(true);
     }, 5000);
 
     console.log('⏳ Загружаем оригиналы...');
-    const imgBg = new Image();
-    imgBg.src = `${BASE_URL}images/portfolio_background.png`;
-    imgBg.onload = () => {
+
+    const bg = new Image();
+    bg.src = `${BASE_URL}images/portfolio_background.png`;
+    bg.onload = () => {
       console.log('✅ Оригинал фона загружен');
-      imagesLoaded++;
-      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
+      bgLoaded = true;
+      if (minTimerPassed) setOriginalShown(true);
     };
-    imgBg.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала фона');
-      imagesLoaded++;
-      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
-    };
+    bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
 
-    const imgRight = new Image();
-    imgRight.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
-    imgRight.onload = () => {
-      console.log('✅ Оригинал персонажа (право) загружен');
-      imagesLoaded++;
-      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
+    const right = new Image();
+    right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
+    const left = new Image();
+    left.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
+    let personaLoadedCount = 0;
+    const checkPersona = () => {
+      personaLoadedCount++;
+      if (personaLoadedCount === 2) {
+        console.log('✅ Оригиналы персонажа загружены');
+        personaLoaded = true;
+        if (minTimerPassed) setPersonaOriginalsReady(true);
+      }
     };
-    imgRight.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
-      imagesLoaded++;
-      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
-    };
-
-    const imgLeft = new Image();
-    imgLeft.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
-    imgLeft.onload = () => {
-      console.log('✅ Оригинал персонажа (лево) загружен');
-      imagesLoaded++;
-      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
-    };
-    imgLeft.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
-      imagesLoaded++;
-      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
-    };
+    right.onload = checkPersona;
+    right.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
+    left.onload = checkPersona;
+    left.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
 
     return () => clearTimeout(minTimer);
   }, []);
@@ -202,10 +194,10 @@ export default function HomePage() {
       else if (gamma < -25) setActiveImage("left");
 
       setGyroOffsets({
-        layer1: { x: normGamma * 40, y: normBeta * 10 },
+        layer1: { x: normGamma * 50, y: normBeta * 15 },
         layer2: {
-          x: Math.max(-15, Math.min(15, normGamma * 60 * 0.02)),
-          y: Math.max(-15, Math.min(15, normBeta * 60 * 0.02)),
+          x: Math.max(-15, Math.min(15, -normGamma * 70 * 0.02)),
+          y: Math.max(-15, Math.min(15, -normBeta * 70 * 0.02)),
         },
         layer3: { x: normGamma * 80, y: normBeta * 120 },
       });
@@ -227,17 +219,21 @@ export default function HomePage() {
     }
   };
 
-  // Клик по угощениям – продолжает диалог и убирает их
+  // Клик по угощениям
   const handleTreatsClick = () => {
     if (!allowDialogue) return;
     playClick();
     setDialogueIndex(prev => prev + 1);
   };
 
-  // Усиленный горизонтальный параллакс для фона (без чёрных полос)
+  // Зеркальный параллакс: стена и персонаж в противофазе
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5,
     y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.5,
+  };
+  const personaOffset = {
+    x: -backgroundOffset.x * 0.4, // зеркально с меньшей амплитудой
+    y: -backgroundOffset.y * 0.2,
   };
 
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
@@ -260,7 +256,7 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 0: фон с расширенными границами, чтобы не было полос */}
+      {/* Слой 0: фон с расширенными границами */}
       <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "120vw", height: "120vh", left: "-10vw", top: "-10vh" }}>
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
@@ -301,12 +297,12 @@ export default function HomePage() {
 
       {/* Слой 2: персонаж */}
       <ParallaxLayer
-        offset={offsets.layer2}
+        offset={personaOffset}
         className="absolute inset-0 z-10 flex items-end justify-center"
         style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
       >
         <motion.img
-          src={`${BASE_URL}images/compress/portfolio_ramzez_right.png`}
+          src={personaOriginalsReady ? `${BASE_URL}images/portfolio_ramzez_right.png` : `${BASE_URL}images/compress/portfolio_ramzez_right.png`}
           alt="Ramzez right"
           className="object-contain cursor-pointer"
           style={{
@@ -322,7 +318,7 @@ export default function HomePage() {
           onClick={nextDialogue}
         />
         <motion.img
-          src={`${BASE_URL}images/compress/portfolio_ramzez_left.png`}
+          src={personaOriginalsReady ? `${BASE_URL}images/portfolio_ramzez_left.png` : `${BASE_URL}images/compress/portfolio_ramzez_left.png`}
           alt="Ramzez left"
           className="object-contain cursor-pointer"
           style={{
