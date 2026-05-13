@@ -226,14 +226,14 @@ export default function HomePage() {
     setDialogueIndex(prev => prev + 1);
   };
 
-  // Зеркальный параллакс: стена и персонаж в противофазе
+  // Зеркальный параллакс с уменьшенным смещением Ramzez
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5,
     y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.5,
   };
   const personaOffset = {
-    x: -backgroundOffset.x * 0.4, // зеркально с меньшей амплитудой
-    y: -backgroundOffset.y * 0.2,
+    x: -backgroundOffset.x * 0.15, // было 0.4, теперь плавнее
+    y: -backgroundOffset.y * 0.1,
   };
 
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
@@ -416,8 +416,8 @@ export default function HomePage() {
                   style={{
                     left: isMobile ? '10%' : '25%',
                     bottom: '40%',
-                    width: '96px',
-                    height: '96px',
+                    width: '110px',
+                    height: '110px',
                   }}
                   onClick={handleTreatsClick}
                   variants={{
@@ -435,7 +435,7 @@ export default function HomePage() {
                     alt="Чай"
                     className="w-full h-full object-contain"
                     style={{
-                      filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
+                      filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8)) drop-shadow(0 0 8px rgba(255,80,80,0.4))',
                     }}
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
@@ -448,8 +448,8 @@ export default function HomePage() {
                   style={{
                     right: isMobile ? '10%' : '25%',
                     bottom: '40%',
-                    width: '96px',
-                    height: '96px',
+                    width: '110px',
+                    height: '110px',
                   }}
                   onClick={handleTreatsClick}
                   variants={{
@@ -467,7 +467,7 @@ export default function HomePage() {
                     alt="Чак-чак"
                     className="w-full h-full object-contain"
                     style={{
-                      filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
+                      filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8)) drop-shadow(0 0 8px rgba(255,80,80,0.4))',
                     }}
                     animate={{ scale: [1, 1.1, 1] }}
                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
