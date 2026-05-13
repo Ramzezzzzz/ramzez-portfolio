@@ -36,6 +36,7 @@ export default function HomePage() {
   const touchStartY = useRef(0);
   const playClick = useClickSound();
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
+  const [shadowOpacity, setShadowOpacity] = useState(0);
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -61,6 +62,22 @@ export default function HomePage() {
     }, 16);
     return () => clearInterval(timer);
   }, []);
+
+  // Тени появляются через 300 мс после прелоадера, ещё до персонажа
+useEffect(() => {
+  if (preloaderVisible) return;
+  const delay = 300;
+  const timer = setTimeout(() => {
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / 400, 1);
+      setShadowOpacity(progress);
+      if (progress >= 1) clearInterval(interval);
+    }, 16);
+  }, delay);
+  return () => clearTimeout(timer);
+}, [preloaderVisible]);
 
   // 2. Появление персонажа (0.6 с после прелоадера)
   useEffect(() => {
@@ -95,6 +112,16 @@ export default function HomePage() {
     };
     bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
 
+    useEffect(() => {
+  if (isMobile) return;
+  const handleMouseMove = () => {
+    if (layer2.x > 8) setActiveImage("right");
+    else if (layer2.x < -8) setActiveImage("left");
+  };
+  window.addEventListener('mousemove', handleMouseMove);
+  return () => window.removeEventListener('mousemove', handleMouseMove);
+}, [isMobile, layer2]);
+
     let personaLoadedCount = 0;
     const onPersonaLoad = () => {
       personaLoadedCount++;
@@ -103,6 +130,7 @@ export default function HomePage() {
         setPersonaOriginalsReady(true);
       }
     };
+
 
     const right = new Image();
     right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
@@ -292,34 +320,34 @@ export default function HomePage() {
       )}
 
       {/* Слой теней (между фоном и персонажем) */}
-      <ParallaxLayer
-        offset={personaOffset}
-        className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
-        style={{ opacity: dialogueIndex >= 1 ? 1 : 0, transition: 'opacity 0.7s ease-in-out' }}
-      >
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
-          alt="Shadow right"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-[51%]"
-          style={{
-            opacity: activeImage === "right" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-            transition: 'opacity 0.7s ease-in-out',
-          }}
-        />
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
-          alt="Shadow left"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
-          style={{
-            opacity: activeImage === "left" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-            transition: 'opacity 0.7s ease-in-out',
-          }}
-        />
-      </ParallaxLayer>
+<ParallaxLayer
+  offset={personaOffset}
+  className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
+  style={{ opacity: shadowOpacity, transition: 'opacity 0.7s ease-in-out' }}
+>
+  <motion.img
+    src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
+    alt="Shadow right"
+    className="object-contain absolute bottom-0 left-1/2 -translate-x-[60%]"
+    style={{
+      opacity: activeImage === "right" ? 1 : 0,
+      maxWidth: "none",
+      maxHeight: `${personaScale * 100}vh`,
+      transition: 'opacity 0.7s ease-in-out',
+    }}
+  />
+  <motion.img
+    src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
+    alt="Shadow left"
+    className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+    style={{
+      opacity: activeImage === "left" ? 1 : 0,
+      maxWidth: "none",
+      maxHeight: `${personaScale * 100}vh`,
+      transition: 'opacity 0.7s ease-in-out',
+    }}
+  />
+</ParallaxLayer>
 
 {/* Слой 2: персонаж */}
 <ParallaxLayer
