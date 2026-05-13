@@ -112,15 +112,7 @@ useEffect(() => {
     };
     bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
 
-    useEffect(() => {
-  if (isMobile) return;
-  const handleMouseMove = () => {
-    if (layer2.x > 8) setActiveImage("right");
-    else if (layer2.x < -8) setActiveImage("left");
-  };
-  window.addEventListener('mousemove', handleMouseMove);
-  return () => window.removeEventListener('mousemove', handleMouseMove);
-}, [isMobile, layer2]);
+
 
     let personaLoadedCount = 0;
     const onPersonaLoad = () => {
@@ -146,6 +138,16 @@ useEffect(() => {
     new Image().src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
+
+      useEffect(() => {
+  if (isMobile) return;
+  const handleMouseMove = () => {
+    if (layer2.x > 8) setActiveImage("right");
+    else if (layer2.x < -8) setActiveImage("left");
+  };
+  window.addEventListener('mousemove', handleMouseMove);
+  return () => window.removeEventListener('mousemove', handleMouseMove);
+}, [isMobile, layer2]);
 
   // Свайпы
   const handleTouchStart = useCallback((e) => {
