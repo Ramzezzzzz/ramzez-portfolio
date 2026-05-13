@@ -82,30 +82,56 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 4. Загрузка оригинала фона (минимум 5 с)
+  // 4. Загрузка оригинала фона и персонажей (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
-    let imageLoaded = false;
+    let imagesLoaded = 0;
+    const totalImages = 2; // фон + персонаж (право и лево считаем отдельно)
     const minTimer = setTimeout(() => {
       minTimerPassed = true;
-      if (imageLoaded) setOriginalShown(true);
+      if (imagesLoaded >= totalImages) setOriginalShown(true);
     }, 5000);
 
-    console.log('⏳ Загружаем оригинал фона...');
-    const img = new Image();
-    img.src = `${BASE_URL}images/portfolio_background.png`;
-    img.onload = () => {
+    console.log('⏳ Загружаем оригиналы...');
+    const imgBg = new Image();
+    imgBg.src = `${BASE_URL}images/portfolio_background.png`;
+    imgBg.onload = () => {
       console.log('✅ Оригинал фона загружен');
-      setOriginalReady(true);
-      imageLoaded = true;
-      if (minTimerPassed) setOriginalShown(true);
+      imagesLoaded++;
+      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
     };
-    img.onerror = () => {
-      console.warn('⚠️ Ошибка загрузки оригинала');
-      setOriginalReady(true);
-      imageLoaded = true;
-      if (minTimerPassed) setOriginalShown(true);
+    imgBg.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала фона');
+      imagesLoaded++;
+      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
     };
+
+    const imgRight = new Image();
+    imgRight.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
+    imgRight.onload = () => {
+      console.log('✅ Оригинал персонажа (право) загружен');
+      imagesLoaded++;
+      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
+    };
+    imgRight.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
+      imagesLoaded++;
+      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
+    };
+
+    const imgLeft = new Image();
+    imgLeft.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
+    imgLeft.onload = () => {
+      console.log('✅ Оригинал персонажа (лево) загружен');
+      imagesLoaded++;
+      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
+    };
+    imgLeft.onerror = () => {
+      console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
+      imagesLoaded++;
+      if (minTimerPassed && imagesLoaded >= totalImages) setOriginalShown(true);
+    };
+
     return () => clearTimeout(minTimer);
   }, []);
 
@@ -176,12 +202,12 @@ export default function HomePage() {
       else if (gamma < -25) setActiveImage("left");
 
       setGyroOffsets({
-        layer1: { x: normGamma * 50, y: normBeta * 30 },
+        layer1: { x: normGamma * 40, y: normBeta * 10 },
         layer2: {
-          x: Math.max(-20, Math.min(20, normGamma * 80 * 0.02)),
-          y: Math.max(-20, Math.min(20, normBeta * 80 * 0.02)),
+          x: Math.max(-15, Math.min(15, normGamma * 60 * 0.02)),
+          y: Math.max(-15, Math.min(15, normBeta * 60 * 0.02)),
         },
-        layer3: { x: normGamma * 120, y: normBeta * 120 },
+        layer3: { x: normGamma * 80, y: normBeta * 120 },
       });
     };
 
@@ -208,15 +234,13 @@ export default function HomePage() {
     setDialogueIndex(prev => prev + 1);
   };
 
-  // Усиленный горизонтальный параллакс для фона
+  // Усиленный горизонтальный параллакс для фона (без чёрных полос)
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5,
-    y: 0,
+    y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.5,
   };
 
-  // Обычные смещения для персонажа и интерфейса
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
-
   const personaScale = isMobile ? 1.0 : 1.2;
 
   return (
@@ -236,20 +260,13 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 0: фон с усиленным горизонтальным параллаксом */}
-      <ParallaxLayer offset={backgroundOffset} className="absolute inset-0 z-0">
+      {/* Слой 0: фон с расширенными границами, чтобы не было полос */}
+      <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "120vw", height: "120vh", left: "-10vw", top: "-10vh" }}>
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
-            backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
-            opacity: originalShown ? 1 : 0,
-          }}
-        />
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${BASE_URL}images/compress/portfolio_background.png)`,
-            opacity: originalShown ? 0 : 1,
+            backgroundImage: `url(${originalShown ? `${BASE_URL}images/portfolio_background.png` : `${BASE_URL}images/compress/portfolio_background.png`})`,
+            opacity: 1,
           }}
         />
       </ParallaxLayer>
