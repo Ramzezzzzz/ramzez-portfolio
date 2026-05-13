@@ -208,11 +208,14 @@ export default function HomePage() {
     setDialogueIndex(prev => prev + 1);
   };
 
-  // УСИЛЕННЫЙ ГОРИЗОНТАЛЬНЫЙ ПАРАЛЛАКС ДЛЯ ФОНА
+  // Усиленный горизонтальный параллакс для фона
   const backgroundOffset = {
-    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5, // усиливаем в 2.5 раза
-    y: 0, // вертикаль оставляем без параллакса
+    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5,
+    y: 0,
   };
+
+  // Обычные смещения для персонажа и интерфейса
+  const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
 
   const personaScale = isMobile ? 1.0 : 1.2;
 
@@ -233,7 +236,7 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 0: фон (ТОЛЬКО ГОРИЗОНТАЛЬНЫЙ ПАРАЛЛАКС) */}
+      {/* Слой 0: фон с усиленным горизонтальным параллаксом */}
       <ParallaxLayer offset={backgroundOffset} className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
