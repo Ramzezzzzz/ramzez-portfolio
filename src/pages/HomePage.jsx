@@ -29,10 +29,8 @@ export default function HomePage() {
   const [personaOpacity, setPersonaOpacity] = useState(0);
   const [allowDialogue, setAllowDialogue] = useState(false);
 
-  const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
   const [personaOriginalsReady, setPersonaOriginalsReady] = useState(false);
-  const [bgTransitioning, setBgTransitioning] = useState(false); // для плавной подмены
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -84,49 +82,41 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 4. Загрузка оригиналов (фона и персонажа)
+  // 4. Загрузка оригиналов (фон + персонажи)
   useEffect(() => {
-    let bgLoaded = false;
-    let personaLoaded = false;
-
     console.log('⏳ Загружаем оригиналы...');
 
     const bg = new Image();
     bg.src = `${BASE_URL}images/portfolio_background.png`;
     bg.onload = () => {
       console.log('✅ Оригинал фона загружен');
-      bgLoaded = true;
-      // Запускаем плавную подмену с небольшой задержкой, чтобы transition сработал
-      setTimeout(() => {
-        setOriginalShown(true);
-      }, 100);
+      // Плавная подмена с небольшой задержкой для срабатывания CSS-перехода
+      setTimeout(() => setOriginalShown(true), 100);
     };
     bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
 
-    const right = new Image();
-    right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
-    const left = new Image();
-    left.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
     let personaLoadedCount = 0;
-    const checkPersona = () => {
+    const onPersonaLoad = () => {
       personaLoadedCount++;
       if (personaLoadedCount === 2) {
         console.log('✅ Оригиналы персонажа загружены');
-        personaLoaded = true;
-        setPersonaOriginalsReady(true); // сразу готовы, но показываются только при dialogueIndex >= 2
+        setPersonaOriginalsReady(true);
       }
     };
-    right.onload = checkPersona;
+
+    const right = new Image();
+    right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
+    right.onload = onPersonaLoad;
     right.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
-    left.onload = checkPersona;
+
+    const left = new Image();
+    left.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
+    left.onload = onPersonaLoad;
     left.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
 
-    // Тени тоже загружаем, но они не требуют отдельного состояния, просто будут доступны
-    const shadowRight = new Image();
-    shadowRight.src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
-    const shadowLeft = new Image();
-    shadowLeft.src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
-    // Просто загружаем в кэш, не отслеживая
+    // Тени загружаются в фоне, без отслеживания
+    new Image().src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
+    new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
 
   // Свайпы
@@ -210,7 +200,6 @@ export default function HomePage() {
     return cleanup;
   }, [isMobile, gyroPermissionGranted]);
 
-  // Продвижение диалога
   const nextDialogue = () => {
     if (!allowDialogue) return;
     playClick();
@@ -221,7 +210,6 @@ export default function HomePage() {
     }
   };
 
-  // Клик по угощениям
   const handleTreatsClick = () => {
     if (!allowDialogue) return;
     playClick();
@@ -238,7 +226,6 @@ export default function HomePage() {
     y: -backgroundOffset.y * 0.1,
   };
 
-  const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
   const personaScale = isMobile ? 1.0 : 1.2;
 
   return (
@@ -260,7 +247,6 @@ export default function HomePage() {
 
       {/* Слой 0: фон с расширенными границами */}
       <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "120vw", height: "120vh", left: "-10vw", top: "-10vh" }}>
-        {/* Сжатый фон (виден до подмены) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -268,7 +254,6 @@ export default function HomePage() {
             opacity: originalShown ? 0 : 1,
           }}
         />
-        {/* Оригинальный фон (плавно появляется) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -310,11 +295,12 @@ export default function HomePage() {
       <ParallaxLayer
         offset={personaOffset}
         className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
+        style={{ opacity: dialogueIndex >= 1 ? 1 : 0, transition: 'opacity 0.7s ease-in-out' }}
       >
         <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
           alt="Shadow right"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-[60%]"
           style={{
             opacity: activeImage === "right" ? 1 : 0,
             maxWidth: "none",
