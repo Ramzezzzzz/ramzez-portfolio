@@ -76,7 +76,7 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [preloaderVisible]);
 
-  // 3. Разрешить диалог чуть раньше (3.5 с)
+  // 3. Разрешить диалог (3.5 с)
   useEffect(() => {
     const delay = setTimeout(() => setAllowDialogue(true), 3500);
     return () => clearTimeout(delay);
@@ -118,7 +118,7 @@ export default function HomePage() {
     (e) => {
       const deltaY = touchStartY.current - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) < 50) return;
-      if (!allowDialogue) return; // не реагируем до первого облачка
+      if (!allowDialogue) return;
       if (deltaY > 0) {
         if (!showInterface) {
           if (dialogueIndex < dialogues.length - 1) setDialogueIndex(prev => prev + 1);
@@ -176,7 +176,7 @@ export default function HomePage() {
       else if (gamma < -25) setActiveImage("left");
 
       setGyroOffsets({
-        layer1: { x: normGamma * 50, y: normBeta * 50 },
+        layer1: { x: normGamma * 50, y: normBeta * 30 },
         layer2: {
           x: Math.max(-20, Math.min(20, normGamma * 80 * 0.02)),
           y: Math.max(-20, Math.min(20, normBeta * 80 * 0.02)),
@@ -205,10 +205,15 @@ export default function HomePage() {
   const handleTreatsClick = () => {
     if (!allowDialogue) return;
     playClick();
-    setDialogueIndex(prev => prev + 1); // переключит на диалог 3, картинки исчезнут автоматически
+    setDialogueIndex(prev => prev + 1);
   };
 
-  const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
+  // УСИЛЕННЫЙ ГОРИЗОНТАЛЬНЫЙ ПАРАЛЛАКС ДЛЯ ФОНА
+  const backgroundOffset = {
+    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5, // усиливаем в 2.5 раза
+    y: 0, // вертикаль оставляем без параллакса
+  };
+
   const personaScale = isMobile ? 1.0 : 1.2;
 
   return (
@@ -228,8 +233,8 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 0: фон */}
-      <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
+      {/* Слой 0: фон (ТОЛЬКО ГОРИЗОНТАЛЬНЫЙ ПАРАЛЛАКС) */}
+      <ParallaxLayer offset={backgroundOffset} className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -381,51 +386,80 @@ export default function HomePage() {
           </AnimatePresence>
 
           {/* Картинки чая и чак-чака (только при dialogueIndex === 2) */}
-          {dialogueIndex === 2 && allowDialogue && !showInterface && (
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-            >
-              <motion.img
-                src={`${BASE_URL}images/tea.png`}
-                alt="Чай"
-                className="absolute w-24 h-24 object-contain cursor-pointer pointer-events-auto"
-                style={{
-                  left: isMobile ? '10%' : '25%',
-                  bottom: '40%',
-                  filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
-                }}
-                variants={{
-                  hidden: { opacity: 0, x: -30 },
-                  visible: { opacity: 1, x: 0 },
-                }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                onClick={handleTreatsClick}
-              />
-              <motion.img
-                src={`${BASE_URL}images/chakchak.png`}
-                alt="Чак-чак"
-                className="absolute w-24 h-24 object-contain cursor-pointer pointer-events-auto"
-                style={{
-                  right: isMobile ? '10%' : '25%',
-                  bottom: '40%',
-                  filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
-                }}
-                variants={{
-                  hidden: { opacity: 0, x: 30 },
-                  visible: { opacity: 1, x: 0 },
-                }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                onClick={handleTreatsClick}
-              />
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {dialogueIndex === 2 && allowDialogue && !showInterface && (
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                {/* Чай */}
+                <motion.div
+                  className="absolute pointer-events-auto cursor-pointer"
+                  style={{
+                    left: isMobile ? '10%' : '25%',
+                    bottom: '40%',
+                    width: '96px',
+                    height: '96px',
+                  }}
+                  onClick={handleTreatsClick}
+                  variants={{
+                    hidden: { opacity: 0, x: -30 },
+                    visible: { opacity: 1, x: 0 },
+                    exit: { opacity: 0, x: -30, transition: { duration: 0.5 } },
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    ease: 'easeOut',
+                  }}
+                >
+                  <motion.img
+                    src={`${BASE_URL}images/tea.png`}
+                    alt="Чай"
+                    className="w-full h-full object-contain"
+                    style={{
+                      filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
+                    }}
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  />
+                </motion.div>
+
+                {/* Чак-чак */}
+                <motion.div
+                  className="absolute pointer-events-auto cursor-pointer"
+                  style={{
+                    right: isMobile ? '10%' : '25%',
+                    bottom: '40%',
+                    width: '96px',
+                    height: '96px',
+                  }}
+                  onClick={handleTreatsClick}
+                  variants={{
+                    hidden: { opacity: 0, x: 30 },
+                    visible: { opacity: 1, x: 0 },
+                    exit: { opacity: 0, x: 30, transition: { duration: 0.5 } },
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    ease: 'easeOut',
+                  }}
+                >
+                  <motion.img
+                    src={`${BASE_URL}images/chakchak.png`}
+                    alt="Чак-чак"
+                    className="w-full h-full object-contain"
+                    style={{
+                      filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
+                    }}
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
