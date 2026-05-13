@@ -63,20 +63,17 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Тени появляются через 300 мс после прелоадера, ещё до персонажа
+// Тени появляются сразу после прелоадера, ещё до персонажа
 useEffect(() => {
   if (preloaderVisible) return;
-  const delay = 300;
-  const timer = setTimeout(() => {
-    const start = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - start;
-      const progress = Math.min(elapsed / 400, 1);
-      setShadowOpacity(progress);
-      if (progress >= 1) clearInterval(interval);
-    }, 16);
-  }, delay);
-  return () => clearTimeout(timer);
+  const start = Date.now();
+  const interval = setInterval(() => {
+    const elapsed = Date.now() - start;
+    const progress = Math.min(elapsed / 400, 1);
+    setShadowOpacity(progress);
+    if (progress >= 1) clearInterval(interval);
+  }, 16);
+  return () => clearInterval(interval);
 }, [preloaderVisible]);
 
   // 2. Появление персонажа (0.6 с после прелоадера)
@@ -139,15 +136,16 @@ useEffect(() => {
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
 
-      useEffect(() => {
+useEffect(() => {
   if (isMobile) return;
-  const handleMouseMove = () => {
-    if (layer2.x > 8) setActiveImage("right");
-    else if (layer2.x < -8) setActiveImage("left");
+  const handleMouseMove = (e) => {
+    const centerX = window.innerWidth / 2;
+    if (e.clientX > centerX + 50) setActiveImage("right");
+    else if (e.clientX < centerX - 50) setActiveImage("left");
   };
   window.addEventListener('mousemove', handleMouseMove);
   return () => window.removeEventListener('mousemove', handleMouseMove);
-}, [isMobile, layer2]);
+}, [isMobile]);
 
   // Свайпы
   const handleTouchStart = useCallback((e) => {
