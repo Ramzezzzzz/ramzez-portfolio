@@ -32,6 +32,7 @@ export default function HomePage() {
   const [originalReady, setOriginalReady] = useState(false);
   const [originalShown, setOriginalShown] = useState(false);
   const [personaOriginalsReady, setPersonaOriginalsReady] = useState(false);
+  const [bgTransitioning, setBgTransitioning] = useState(false); // для плавной подмены
 
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
@@ -83,17 +84,10 @@ export default function HomePage() {
     return () => clearTimeout(delay);
   }, []);
 
-  // 4. Загрузка оригиналов (минимум 5 с)
+  // 4. Загрузка оригиналов (фона и персонажа)
   useEffect(() => {
-    let minTimerPassed = false;
     let bgLoaded = false;
     let personaLoaded = false;
-
-    const minTimer = setTimeout(() => {
-      minTimerPassed = true;
-      if (bgLoaded) setOriginalShown(true);
-      if (personaLoaded) setPersonaOriginalsReady(true);
-    }, 5000);
 
     console.log('⏳ Загружаем оригиналы...');
 
@@ -102,7 +96,10 @@ export default function HomePage() {
     bg.onload = () => {
       console.log('✅ Оригинал фона загружен');
       bgLoaded = true;
-      if (minTimerPassed) setOriginalShown(true);
+      // Запускаем плавную подмену с небольшой задержкой, чтобы transition сработал
+      setTimeout(() => {
+        setOriginalShown(true);
+      }, 100);
     };
     bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
 
@@ -116,7 +113,7 @@ export default function HomePage() {
       if (personaLoadedCount === 2) {
         console.log('✅ Оригиналы персонажа загружены');
         personaLoaded = true;
-        if (minTimerPassed) setPersonaOriginalsReady(true);
+        setPersonaOriginalsReady(true); // сразу готовы, но показываются только при dialogueIndex >= 2
       }
     };
     right.onload = checkPersona;
@@ -124,7 +121,12 @@ export default function HomePage() {
     left.onload = checkPersona;
     left.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
 
-    return () => clearTimeout(minTimer);
+    // Тени тоже загружаем, но они не требуют отдельного состояния, просто будут доступны
+    const shadowRight = new Image();
+    shadowRight.src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
+    const shadowLeft = new Image();
+    shadowLeft.src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
+    // Просто загружаем в кэш, не отслеживая
   }, []);
 
   // Свайпы
@@ -226,13 +228,13 @@ export default function HomePage() {
     setDialogueIndex(prev => prev + 1);
   };
 
-  // Зеркальный параллакс с уменьшенным смещением Ramzez
+  // Параллакс
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5,
     y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.5,
   };
   const personaOffset = {
-    x: -backgroundOffset.x * 0.15, // было 0.4, теперь плавнее
+    x: -backgroundOffset.x * 0.15,
     y: -backgroundOffset.y * 0.1,
   };
 
@@ -258,11 +260,20 @@ export default function HomePage() {
 
       {/* Слой 0: фон с расширенными границами */}
       <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "120vw", height: "120vh", left: "-10vw", top: "-10vh" }}>
+        {/* Сжатый фон (виден до подмены) */}
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
-            backgroundImage: `url(${originalShown ? `${BASE_URL}images/portfolio_background.png` : `${BASE_URL}images/compress/portfolio_background.png`})`,
-            opacity: 1,
+            backgroundImage: `url(${BASE_URL}images/compress/portfolio_background.png)`,
+            opacity: originalShown ? 0 : 1,
+          }}
+        />
+        {/* Оригинальный фон (плавно появляется) */}
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
+            opacity: originalShown ? 1 : 0,
           }}
         />
       </ParallaxLayer>
@@ -295,6 +306,35 @@ export default function HomePage() {
         </motion.div>
       )}
 
+      {/* Слой теней (между фоном и персонажем) */}
+      <ParallaxLayer
+        offset={personaOffset}
+        className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
+      >
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
+          alt="Shadow right"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{
+            opacity: activeImage === "right" ? 1 : 0,
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+            transition: 'opacity 0.7s ease-in-out',
+          }}
+        />
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
+          alt="Shadow left"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+            transition: 'opacity 0.7s ease-in-out',
+          }}
+        />
+      </ParallaxLayer>
+
       {/* Слой 2: персонаж */}
       <ParallaxLayer
         offset={personaOffset}
@@ -302,15 +342,15 @@ export default function HomePage() {
         style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
       >
         <motion.img
-          src={personaOriginalsReady ? `${BASE_URL}images/portfolio_ramzez_right.png` : `${BASE_URL}images/compress/portfolio_ramzez_right.png`}
+          src={
+            dialogueIndex >= 3 && personaOriginalsReady
+              ? `${BASE_URL}images/portfolio_ramzez_right.png`
+              : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
+          }
           alt="Ramzez right"
-          className="object-contain cursor-pointer"
+          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
           style={{
             opacity: activeImage === "right" ? 1 : 0,
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
             maxWidth: "none",
             maxHeight: `${personaScale * 100}vh`,
           }}
@@ -318,15 +358,15 @@ export default function HomePage() {
           onClick={nextDialogue}
         />
         <motion.img
-          src={personaOriginalsReady ? `${BASE_URL}images/portfolio_ramzez_left.png` : `${BASE_URL}images/compress/portfolio_ramzez_left.png`}
+          src={
+            dialogueIndex >= 3 && personaOriginalsReady
+              ? `${BASE_URL}images/portfolio_ramzez_left.png`
+              : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
+          }
           alt="Ramzez left"
-          className="object-contain cursor-pointer"
+          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
           style={{
             opacity: activeImage === "left" ? 1 : 0,
-            position: "absolute",
-            bottom: 0,
-            left: "50%",
-            transform: "translateX(-50%)",
             maxWidth: "none",
             maxHeight: `${personaScale * 100}vh`,
           }}
@@ -410,7 +450,6 @@ export default function HomePage() {
                 animate="visible"
                 exit="exit"
               >
-                {/* Чай */}
                 <motion.div
                   className="absolute pointer-events-auto cursor-pointer"
                   style={{
@@ -425,10 +464,7 @@ export default function HomePage() {
                     visible: { opacity: 1, x: 0 },
                     exit: { opacity: 0, x: -30, transition: { duration: 0.5 } },
                   }}
-                  transition={{
-                    duration: 0.8,
-                    ease: 'easeOut',
-                  }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
                 >
                   <motion.img
                     src={`${BASE_URL}images/tea.png`}
@@ -441,8 +477,6 @@ export default function HomePage() {
                     transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
                   />
                 </motion.div>
-
-                {/* Чак-чак */}
                 <motion.div
                   className="absolute pointer-events-auto cursor-pointer"
                   style={{
@@ -457,10 +491,7 @@ export default function HomePage() {
                     visible: { opacity: 1, x: 0 },
                     exit: { opacity: 0, x: 30, transition: { duration: 0.5 } },
                   }}
-                  transition={{
-                    duration: 0.8,
-                    ease: 'easeOut',
-                  }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
                 >
                   <motion.img
                     src={`${BASE_URL}images/chakchak.png`}
