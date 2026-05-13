@@ -328,7 +328,7 @@ useEffect(() => {
   <motion.img
     src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
     alt="Shadow right"
-    className="object-contain absolute bottom-0 left-1/2 -translate-x-[58%]"
+    className="object-contain absolute bottom-0 left-1/2 -translate-x-[53%]"
     style={{
       opacity: activeImage === "right" ? 1 : 0,
       maxWidth: "none",
