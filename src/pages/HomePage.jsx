@@ -300,7 +300,7 @@ export default function HomePage() {
         <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
           alt="Shadow right"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-[55%]"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-[51%]"
           style={{
             opacity: activeImage === "right" ? 1 : 0,
             maxWidth: "none",
@@ -321,45 +321,45 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж */}
-      <ParallaxLayer
-        offset={personaOffset}
-        className="absolute inset-0 z-10 flex items-end justify-center"
-        style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
-      >
-        <motion.img
-          src={
-            dialogueIndex >= 3 && personaOriginalsReady
-              ? `${BASE_URL}images/portfolio_ramzez_right.png`
-              : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
-          }
-          alt="Ramzez right"
-          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
-          style={{
-            opacity: activeImage === "right" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-          }}
-          transition={{ duration: 0.7, ease: "easeInOut" }}
-          onClick={nextDialogue}
-        />
-        <motion.img
-          src={
-            dialogueIndex >= 3 && personaOriginalsReady
-              ? `${BASE_URL}images/portfolio_ramzez_left.png`
-              : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
-          }
-          alt="Ramzez left"
-          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
-          style={{
-            opacity: activeImage === "left" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-          }}
-          transition={{ duration: 0.7, ease: "easeInOut" }}
-          onClick={nextDialogue}
-        />
-      </ParallaxLayer>
+{/* Слой 2: персонаж */}
+<ParallaxLayer
+  offset={personaOffset}
+  className="absolute inset-0 z-10 flex items-end justify-center"
+  style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
+>
+  <motion.img
+    src={
+      dialogueIndex >= 3 && personaOriginalsReady
+        ? `${BASE_URL}images/portfolio_ramzez_right.png`
+        : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
+    }
+    alt="Ramzez right"
+    className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
+    style={{
+      opacity: activeImage === "right" ? 1 : 0,
+      maxWidth: "none",
+      maxHeight: `${personaScale * 100}vh`,
+    }}
+    transition={{ duration: 0.7, ease: "easeInOut" }}
+    onClick={nextDialogue}
+  />
+  <motion.img
+    src={
+      dialogueIndex >= 3 && personaOriginalsReady
+        ? `${BASE_URL}images/portfolio_ramzez_left.png`
+        : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
+    }
+    alt="Ramzez left"
+    className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
+    style={{
+      opacity: activeImage === "left" ? 1 : 0,
+      maxWidth: "none",
+      maxHeight: `${personaScale * 100}vh`,
+    }}
+    transition={{ duration: 0.7, ease: "easeInOut" }}
+    onClick={nextDialogue}
+  />
+</ParallaxLayer>
 
       {/* Статичный слой для облаков и картинок */}
       <div className="absolute inset-0 z-20 pointer-events-none">
