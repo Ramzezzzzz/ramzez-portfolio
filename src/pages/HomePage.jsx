@@ -46,13 +46,12 @@ export default function HomePage() {
     }
   };
 
-  // Прелоадер: 2.8 секунды
+  // 1. Прелоадер (2.8 секунды)
   useEffect(() => {
     const startTime = Date.now();
-    const duration = 2800;
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
+      const progress = Math.min(elapsed / 2800, 1);
       setLoadingProgress(Math.floor(progress * 100));
       setBlackOverlayOpacity(1 - progress);
       if (progress >= 1) {
@@ -63,14 +62,13 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Появление персонажа (0.6 с)
+  // 2. Появление персонажа (0.6 с после прелоадера)
   useEffect(() => {
     if (preloaderVisible) return;
     const startTime = Date.now();
-    const duration = 600;
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
+      const progress = Math.min(elapsed / 600, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setPersonaOpacity(eased);
       if (progress >= 1) clearInterval(timer);
@@ -78,13 +76,13 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [preloaderVisible]);
 
-  // Диалог появляется через 4.5 с
+  // 3. Разрешить диалог чуть раньше (3.5 с)
   useEffect(() => {
-    const delay = setTimeout(() => setAllowDialogue(true), 4500);
+    const delay = setTimeout(() => setAllowDialogue(true), 3500);
     return () => clearTimeout(delay);
   }, []);
 
-  // Загрузка оригинала фона (минимум 5 с)
+  // 4. Загрузка оригинала фона (минимум 5 с)
   useEffect(() => {
     let minTimerPassed = false;
     let imageLoaded = false;
@@ -111,6 +109,7 @@ export default function HomePage() {
     return () => clearTimeout(minTimer);
   }, []);
 
+  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -119,8 +118,9 @@ export default function HomePage() {
     (e) => {
       const deltaY = touchStartY.current - e.changedTouches[0].clientY;
       if (Math.abs(deltaY) < 50) return;
+      if (!allowDialogue) return; // не реагируем до первого облачка
       if (deltaY > 0) {
-        if (!showInterface && allowDialogue) {
+        if (!showInterface) {
           if (dialogueIndex < dialogues.length - 1) setDialogueIndex(prev => prev + 1);
           else setShowInterface(true);
           playClick();
@@ -129,7 +129,7 @@ export default function HomePage() {
         if (showInterface) {
           setShowInterface(false);
           setDialogueIndex(dialogues.length - 1);
-        } else if (dialogueIndex > 0 && allowDialogue) {
+        } else if (dialogueIndex > 0) {
           setDialogueIndex(prev => prev - 1);
         }
         playClick();
@@ -149,6 +149,7 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
+  // Гироскоп
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -171,11 +172,8 @@ export default function HomePage() {
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
 
-      if (gamma > 25) {
-        setActiveImage("right");
-      } else if (gamma < -25) {
-        setActiveImage("left");
-      }
+      if (gamma > 25) setActiveImage("right");
+      else if (gamma < -25) setActiveImage("left");
 
       setGyroOffsets({
         layer1: { x: normGamma * 50, y: normBeta * 50 },
@@ -189,17 +187,25 @@ export default function HomePage() {
 
     window.addEventListener("deviceorientation", handleOrientation);
     cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
-
     return cleanup;
   }, [isMobile, gyroPermissionGranted]);
 
+  // Продвижение диалога
   const nextDialogue = () => {
+    if (!allowDialogue) return;
     playClick();
     if (dialogueIndex < dialogues.length - 1) {
       setDialogueIndex(prev => prev + 1);
     } else {
       setShowInterface(true);
     }
+  };
+
+  // Клик по угощениям – продолжает диалог и убирает их
+  const handleTreatsClick = () => {
+    if (!allowDialogue) return;
+    playClick();
+    setDialogueIndex(prev => prev + 1); // переключит на диалог 3, картинки исчезнут автоматически
   };
 
   const offsets = isMobile ? gyroOffsets : { layer1, layer2, layer3 };
@@ -222,6 +228,7 @@ export default function HomePage() {
         </button>
       )}
 
+      {/* Слой 0: фон */}
       <ParallaxLayer offset={offsets.layer1} className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
@@ -239,7 +246,7 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Постоянное затемнение (усиленная виньетка) */}
+      {/* Постоянное затемнение (виньетка) */}
       <div
         className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
         style={{
@@ -267,6 +274,7 @@ export default function HomePage() {
         </motion.div>
       )}
 
+      {/* Слой 2: персонаж */}
       <ParallaxLayer
         offset={offsets.layer2}
         className="absolute inset-0 z-10 flex items-end justify-center"
@@ -306,16 +314,49 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      <ParallaxLayer offset={offsets.layer3} className="absolute inset-0 z-20 pointer-events-none">
+      {/* Статичный слой для облаков и картинок */}
+      <div className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
-            {!showInterface && allowDialogue ? (
+            {!showInterface && allowDialogue && dialogueIndex === 0 && (
               <motion.div
-                key={dialogueIndex}
+                key="dialogue-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                transition={{ duration: 0.5 }}
+                className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
+                onClick={nextDialogue}
+              >
+                <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
+                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
+                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[0]}</p>
+                </GlassCard>
+              </motion.div>
+            )}
+            {!showInterface && allowDialogue && dialogueIndex === 1 && (
+              <motion.div
+                key="dialogue-1"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
+                className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
+                onClick={nextDialogue}
+              >
+                <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
+                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
+                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[1]}</p>
+                </GlassCard>
+              </motion.div>
+            )}
+            {!showInterface && allowDialogue && dialogueIndex >= 3 && (
+              <motion.div
+                key={`dialogue-${dialogueIndex}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.5 }}
                 className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
                 onClick={nextDialogue}
               >
@@ -324,20 +365,25 @@ export default function HomePage() {
                   <p className="text-white text-base sm:text-lg font-medium">{dialogues[dialogueIndex]}</p>
                 </GlassCard>
               </motion.div>
-            ) : showInterface ? (
+            )}
+            {showInterface && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
                 <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"><FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" /> Проекты</button>
-                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold"><PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог</button>
+                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
+                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" /> Проекты
+                  </button>
+                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
+                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог
+                  </button>
                 </div>
               </motion.div>
-            ) : null}
+            )}
           </AnimatePresence>
 
-          {/* Угощения */}
-          {dialogueIndex >= 2 && !showInterface && allowDialogue && (
+          {/* Картинки чая и чак-чака (только при dialogueIndex === 2) */}
+          {dialogueIndex === 2 && allowDialogue && !showInterface && (
             <motion.div
-              className="absolute inset-0 z-15 pointer-events-none"
+              className="absolute inset-0 pointer-events-none"
               initial="hidden"
               animate="visible"
               exit="hidden"
@@ -345,37 +391,43 @@ export default function HomePage() {
               <motion.img
                 src={`${BASE_URL}images/tea.png`}
                 alt="Чай"
-                className="absolute w-24 h-24 object-contain"
+                className="absolute w-24 h-24 object-contain cursor-pointer pointer-events-auto"
                 style={{
-                  left: isMobile ? '5%' : '20%',
+                  left: isMobile ? '10%' : '25%',
                   bottom: '40%',
-                  filter: 'drop-shadow(0 0 20px rgba(255,80,80,0.8))',
+                  filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
                 }}
                 variants={{
                   hidden: { opacity: 0, x: -30 },
                   visible: { opacity: 1, x: 0 },
                 }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                onClick={handleTreatsClick}
               />
               <motion.img
                 src={`${BASE_URL}images/chakchak.png`}
                 alt="Чак-чак"
-                className="absolute w-24 h-24 object-contain"
+                className="absolute w-24 h-24 object-contain cursor-pointer pointer-events-auto"
                 style={{
-                  right: isMobile ? '5%' : '20%',
+                  right: isMobile ? '10%' : '25%',
                   bottom: '40%',
-                  filter: 'drop-shadow(0 0 20px rgba(255,80,80,0.8))',
+                  filter: 'drop-shadow(0 0 15px rgba(255,80,80,0.6))',
                 }}
                 variants={{
                   hidden: { opacity: 0, x: 30 },
                   visible: { opacity: 1, x: 0 },
                 }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                onClick={handleTreatsClick}
               />
             </motion.div>
           )}
         </div>
-      </ParallaxLayer>
+      </div>
     </div>
   );
 }
