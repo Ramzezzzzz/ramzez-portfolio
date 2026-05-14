@@ -18,7 +18,7 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((mat) => {
           mat.transparent = true;
-          mat.opacity = 0.7;
+          mat.opacity = 0.35;
           mat.depthWrite = false;
           mat.needsUpdate = true;
         });
