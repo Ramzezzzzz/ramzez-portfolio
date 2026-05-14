@@ -7,6 +7,7 @@ import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
 import Card3D from "../components/Card3D";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -132,6 +133,15 @@ export default function HomePage() {
     new Image().src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
+
+  // Предзагрузка 3D-модели и шрифта для карточек
+    useEffect(() => {
+      const loader = new GLTFLoader();
+      loader.load(`${BASE_URL}icon_card.glb`);
+      // Предзагрузка шрифта (если используется внешний)
+      const font = new FontFace('Inter', 'url(/fonts/Inter-Bold.ttf)');
+      font.load().then(() => document.fonts.add(font));
+    }, []);
 
   // Разворот персонажа на десктопе по положению курсора
   useEffect(() => {
@@ -440,24 +450,24 @@ export default function HomePage() {
               </motion.div>
             )}
             {showInterface && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
                 <div className="flex justify-center gap-6 mt-4">
-                  <motion.div
+                    <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                  >
+                    transition={{ duration: 0.5 }}
+                    >
                     <Card3D key="card-projects" glbPath={`${BASE_URL}icon_card.glb`} label="Проекты" />
-                  </motion.div>
-                  <motion.div
+                    </motion.div>
+                    <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.4 }}
-                  >
+                    transition={{ duration: 0.5 }}
+                    >
                     <Card3D key="card-blog" glbPath={`${BASE_URL}icon_card.glb`} label="Блог" />
-                  </motion.div>
+                    </motion.div>
                 </div>
-              </motion.div>
+                </motion.div>
             )}
           </AnimatePresence>
 
