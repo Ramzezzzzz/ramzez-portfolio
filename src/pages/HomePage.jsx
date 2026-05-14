@@ -63,18 +63,18 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-// Тени появляются сразу после прелоадера, ещё до персонажа
-useEffect(() => {
-  if (preloaderVisible) return;
-  const start = Date.now();
-  const interval = setInterval(() => {
-    const elapsed = Date.now() - start;
-    const progress = Math.min(elapsed / 400, 1);
-    setShadowOpacity(progress);
-    if (progress >= 1) clearInterval(interval);
-  }, 16);
-  return () => clearInterval(interval);
-}, [preloaderVisible]);
+  // Тени появляются сразу после прелоадера, ещё до персонажа
+  useEffect(() => {
+    if (preloaderVisible) return;
+    const start = Date.now();
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const progress = Math.min(elapsed / 400, 1);
+      setShadowOpacity(progress);
+      if (progress >= 1) clearInterval(interval);
+    }, 16);
+    return () => clearInterval(interval);
+  }, [preloaderVisible]);
 
   // 2. Появление персонажа (0.6 с после прелоадера)
   useEffect(() => {
@@ -104,12 +104,9 @@ useEffect(() => {
     bg.src = `${BASE_URL}images/portfolio_background.png`;
     bg.onload = () => {
       console.log('✅ Оригинал фона загружен');
-      // Плавная подмена с небольшой задержкой для срабатывания CSS-перехода
       setTimeout(() => setOriginalShown(true), 100);
     };
     bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
-
-
 
     let personaLoadedCount = 0;
     const onPersonaLoad = () => {
@@ -119,7 +116,6 @@ useEffect(() => {
         setPersonaOriginalsReady(true);
       }
     };
-
 
     const right = new Image();
     right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
@@ -131,21 +127,22 @@ useEffect(() => {
     left.onload = onPersonaLoad;
     left.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
 
-    // Тени загружаются в фоне, без отслеживания
+    // Тени загружаются в фоне
     new Image().src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
 
-useEffect(() => {
-  if (isMobile) return;
-  const handleMouseMove = (e) => {
-    const centerX = window.innerWidth / 2;
-    if (e.clientX > centerX + 50) setActiveImage("right");
-    else if (e.clientX < centerX - 50) setActiveImage("left");
-  };
-  window.addEventListener('mousemove', handleMouseMove);
-  return () => window.removeEventListener('mousemove', handleMouseMove);
-}, [isMobile]);
+  // Разворот персонажа на десктопе по положению курсора
+  useEffect(() => {
+    if (isMobile) return;
+    const handleMouseMove = (e) => {
+      const centerX = window.innerWidth / 2;
+      if (e.clientX > centerX + 50) setActiveImage("right");
+      else if (e.clientX < centerX - 50) setActiveImage("left");
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [isMobile]);
 
   // Свайпы
   const handleTouchStart = useCallback((e) => {
@@ -214,7 +211,7 @@ useEffect(() => {
       else if (gamma < -25) setActiveImage("left");
 
       setGyroOffsets({
-        layer1: { x: normGamma * 50, y: normBeta * 15 },
+        layer1: { x: normGamma * 20, y: normBeta * 6 },  // уменьшено для мобильных
         layer2: {
           x: Math.max(-15, Math.min(15, -normGamma * 70 * 0.02)),
           y: Math.max(-15, Math.min(15, -normBeta * 70 * 0.02)),
@@ -246,8 +243,8 @@ useEffect(() => {
 
   // Параллакс
   const backgroundOffset = {
-    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.5,
-    y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.5,
+    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 1.5,  // уменьшено для мобильных
+    y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.3,
   };
   const personaOffset = {
     x: -backgroundOffset.x * 0.15,
@@ -273,8 +270,8 @@ useEffect(() => {
         </button>
       )}
 
-      {/* Слой 0: фон с расширенными границами */}
-      <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "120vw", height: "120vh", left: "-10vw", top: "-10vh" }}>
+      {/* Слой 0: фон с расширенными границами – ещё шире, чтобы не было чёрных полос */}
+      <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "140vw", height: "140vh", left: "-20vw", top: "-20vh" }}>
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -320,74 +317,74 @@ useEffect(() => {
       )}
 
       {/* Слой теней (между фоном и персонажем) */}
-<ParallaxLayer
-  offset={personaOffset}
-  className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
-  style={{ opacity: shadowOpacity, transition: 'opacity 0.7s ease-in-out' }}
->
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
-    alt="Shadow right"
-    className="object-contain absolute bottom-0 left-1/2 -translate-x-[53%]"
-    style={{
-      opacity: activeImage === "right" ? 1 : 0,
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-      transition: 'opacity 0.7s ease-in-out',
-    }}
-  />
-  <motion.img
-    src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
-    alt="Shadow left"
-    className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
-    style={{
-      opacity: activeImage === "left" ? 1 : 0,
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-      transition: 'opacity 0.7s ease-in-out',
-    }}
-  />
-</ParallaxLayer>
+      <ParallaxLayer
+        offset={personaOffset}
+        className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
+        style={{ opacity: shadowOpacity, transition: 'opacity 0.7s ease-in-out' }}
+      >
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
+          alt="Shadow right"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-[60%]"
+          style={{
+            opacity: activeImage === "right" ? 1 : 0,
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+            transition: 'opacity 0.7s ease-in-out',
+          }}
+        />
+        <motion.img
+          src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
+          alt="Shadow left"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+            transition: 'opacity 0.7s ease-in-out',
+          }}
+        />
+      </ParallaxLayer>
 
-{/* Слой 2: персонаж */}
-<ParallaxLayer
-  offset={personaOffset}
-  className="absolute inset-0 z-10 flex items-end justify-center"
-  style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
->
-  <motion.img
-    src={
-      dialogueIndex >= 3 && personaOriginalsReady
-        ? `${BASE_URL}images/portfolio_ramzez_right.png`
-        : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
-    }
-    alt="Ramzez right"
-    className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
-    style={{
-      opacity: activeImage === "right" ? 1 : 0,
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-  <motion.img
-    src={
-      dialogueIndex >= 3 && personaOriginalsReady
-        ? `${BASE_URL}images/portfolio_ramzez_left.png`
-        : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
-    }
-    alt="Ramzez left"
-    className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
-    style={{
-      opacity: activeImage === "left" ? 1 : 0,
-      maxWidth: "none",
-      maxHeight: `${personaScale * 100}vh`,
-    }}
-    transition={{ duration: 0.7, ease: "easeInOut" }}
-    onClick={nextDialogue}
-  />
-</ParallaxLayer>
+      {/* Слой 2: персонаж */}
+      <ParallaxLayer
+        offset={personaOffset}
+        className="absolute inset-0 z-10 flex items-end justify-center"
+        style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
+      >
+        <motion.img
+          src={
+            dialogueIndex >= 3 && personaOriginalsReady
+              ? `${BASE_URL}images/portfolio_ramzez_right.png`
+              : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
+          }
+          alt="Ramzez right"
+          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{
+            opacity: activeImage === "right" ? 1 : 0,
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+            transition: 'opacity 0.7s ease-in-out',
+          }}
+          onClick={nextDialogue}
+        />
+        <motion.img
+          src={
+            dialogueIndex >= 3 && personaOriginalsReady
+              ? `${BASE_URL}images/portfolio_ramzez_left.png`
+              : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
+          }
+          alt="Ramzez left"
+          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
+          style={{
+            opacity: activeImage === "left" ? 1 : 0,
+            maxWidth: "none",
+            maxHeight: `${personaScale * 100}vh`,
+            transition: 'opacity 0.7s ease-in-out',
+          }}
+          onClick={nextDialogue}
+        />
+      </ParallaxLayer>
 
       {/* Статичный слой для облаков и картинок */}
       <div className="absolute inset-0 z-20 pointer-events-none">
