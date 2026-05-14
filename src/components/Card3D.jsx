@@ -43,7 +43,6 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/Inter-Bold.ttf" // замените на путь к жирному шрифту, если есть
         outlineWidth={0.02}
         outlineColor="#000000"
       >
