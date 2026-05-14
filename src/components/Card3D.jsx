@@ -2,6 +2,7 @@
 import { Canvas, useLoader, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment, Text } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 function Model({ url, rotateXRef, rotateYRef, label }) {
@@ -18,7 +19,7 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((mat) => {
           mat.transparent = true;
-          mat.opacity = 0.35;
+          mat.opacity = 0.7;
           mat.depthWrite = false;
           mat.needsUpdate = true;
         });
@@ -36,14 +37,13 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
   return (
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
-      {/* 3D-текст */}
       <Text
         position={[0, -0.9, 0.3]}
-        fontSize={0.2}
+        fontSize={0.3}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.02}
+        outlineWidth={0.03}
         outlineColor="#000000"
       >
         {label}
@@ -54,11 +54,20 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
 
 export default function Card3D({ glbPath, label, className = '' }) {
   const [hover, setHover] = useState(false);
+  const [modelReady, setModelReady] = useState(false);
   const cardRef = useRef(null);
   const rotateXRef = useRef(0);
   const rotateYRef = useRef(0);
   const rafId = useRef(null);
   const mousePos = useRef({ x: 0, y: 0 });
+
+  // Предзагрузка модели до рендера Canvas
+  useEffect(() => {
+    const loader = new GLTFLoader();
+    loader.load(glbPath, () => {
+      setModelReady(true);
+    });
+  }, [glbPath]);
 
   const handleMouseMove = (e) => {
     mousePos.current.x = e.clientX;
@@ -95,10 +104,25 @@ export default function Card3D({ glbPath, label, className = '' }) {
     };
   }, []);
 
+  if (!modelReady) {
+    // Пустой placeholder, чтобы избежать скачков вёрстки
+    return (
+      <div
+        className={`w-32 h-32 sm:w-40 sm:h-40 transition-transform duration-300 ${className}`}
+        style={{
+          background: 'transparent',
+          border: 'none',
+          boxShadow: 'none',
+          margin: '8px',
+        }}
+      />
+    );
+  }
+
   return (
     <div
       ref={cardRef}
-      className={`w-24 h-24 sm:w-32 sm:h-32 transition-transform duration-300 ${className}`}
+      className={`w-32 h-32 sm:w-40 sm:h-40 transition-transform duration-300 ${className}`}
       style={{
         transform: hover ? 'scale(1.15)' : 'scale(1)',
         background: 'transparent',
@@ -120,6 +144,9 @@ export default function Card3D({ glbPath, label, className = '' }) {
           <Model url={glbPath} rotateXRef={rotateXRef} rotateYRef={rotateYRef} label={label} />
         </Suspense>
         <Environment preset="city" />
+        <EffectComposer>
+          <Bloom luminanceThreshold={0.4} luminanceSmoothing={0.9} intensity={0.8} />
+        </EffectComposer>
       </Canvas>
     </div>
   );
