@@ -243,8 +243,8 @@ export default function HomePage() {
 
   // Параллакс
   const backgroundOffset = {
-    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 1.5,  // уменьшено для мобильных
-    y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.3,
+    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.0,  // уменьшено для мобильных
+    y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.4,
   };
   const personaOffset = {
     x: -backgroundOffset.x * 0.15,
@@ -271,7 +271,7 @@ export default function HomePage() {
       )}
 
       {/* Слой 0: фон с расширенными границами – ещё шире, чтобы не было чёрных полос */}
-      <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "140vw", height: "140vh", left: "-20vw", top: "-20vh" }}>
+      <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "130vw", height: "130vh", left: "-15vw", top: "-15vh" }}>
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
           style={{
@@ -325,7 +325,7 @@ export default function HomePage() {
         <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
           alt="Shadow right"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-[60%]"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-[57%]"
           style={{
             opacity: activeImage === "right" ? 1 : 0,
             maxWidth: "none",
@@ -336,7 +336,7 @@ export default function HomePage() {
         <motion.img
           src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
           alt="Shadow left"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+          className="object-contain absolute bottom-0 left-1/2 -translate-x-[57%]"
           style={{
             opacity: activeImage === "left" ? 1 : 0,
             maxWidth: "none",
