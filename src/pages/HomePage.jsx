@@ -6,6 +6,7 @@ import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
+import Card3D from "../components/Card3D";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -447,6 +448,10 @@ export default function HomePage() {
                   <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
                     <PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог
                   </button>
+<div className="flex justify-center gap-6 mt-4">
+  <Card3D key="card-left" glbPath={`${BASE_URL}icon_card.glb`} />
+  <Card3D key="card-right" glbPath={`${BASE_URL}icon_card.glb`} />
+</div>
                 </div>
               </motion.div>
             )}
