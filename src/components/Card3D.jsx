@@ -1,30 +1,26 @@
 ﻿import React, { useState, useRef, useEffect, Suspense, useMemo } from 'react';
 import { Canvas, useLoader, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { Environment } from '@react-three/drei';
+import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-function Model({ url, rotateXRef, rotateYRef }) {
+function Model({ url, rotateXRef, rotateYRef, label }) {
   const originalScene = useLoader(GLTFLoader, url);
   const group = useRef();
 
-  // Клонируем загруженную сцену для каждого экземпляра,
-  // чтобы избежать конфликтов при повторном использовании одной модели.
   const clonedScene = useMemo(() => {
-    return originalScene.scene.clone(true); // глубокое клонирование всех мешей и материалов
+    return originalScene.scene.clone(true);
   }, [originalScene]);
 
-  // Применяем прозрачность ко всем материалам клонированной сцены
   useEffect(() => {
     clonedScene.traverse((child) => {
       if (child.isMesh && child.material) {
-        // Убедимся, что у каждого материала свой экземпляр
-        const mat = Array.isArray(child.material) ? child.material : [child.material];
-        mat.forEach((m) => {
-          m.transparent = true;
-          m.opacity = 0.3;
-          m.depthWrite = false;
-          m.needsUpdate = true;
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((mat) => {
+          mat.transparent = true;
+          mat.opacity = 0.7;
+          mat.depthWrite = false;
+          mat.needsUpdate = true;
         });
       }
     });
@@ -40,11 +36,24 @@ function Model({ url, rotateXRef, rotateYRef }) {
   return (
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
+      {/* 3D-текст */}
+      <Text
+        position={[0, -0.9, 0.3]}
+        fontSize={0.2}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        font="/fonts/Inter-Bold.ttf" // замените на путь к жирному шрифту, если есть
+        outlineWidth={0.02}
+        outlineColor="#000000"
+      >
+        {label}
+      </Text>
     </group>
   );
 }
 
-export default function Card3D({ glbPath, className = '' }) {
+export default function Card3D({ glbPath, label, className = '' }) {
   const [hover, setHover] = useState(false);
   const cardRef = useRef(null);
   const rotateXRef = useRef(0);
@@ -109,7 +118,7 @@ export default function Card3D({ glbPath, className = '' }) {
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />
         <Suspense fallback={null}>
-          <Model url={glbPath} rotateXRef={rotateXRef} rotateYRef={rotateYRef} />
+          <Model url={glbPath} rotateXRef={rotateXRef} rotateYRef={rotateYRef} label={label} />
         </Suspense>
         <Environment preset="city" />
       </Canvas>

@@ -441,17 +441,21 @@ export default function HomePage() {
             )}
             {showInterface && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
-                <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
-                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
-                    <FolderGit2 className="w-5 h-5 sm:w-6 sm:h-6" /> Проекты
-                  </button>
-                  <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
-                    <PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог
-                  </button>
-                </div>
                 <div className="flex justify-center gap-6 mt-4">
-                  <Card3D key="card-left" glbPath={`${BASE_URL}icon_card.glb`} />
-                  <Card3D key="card-right" glbPath={`${BASE_URL}icon_card.glb`} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                  >
+                    <Card3D key="card-projects" glbPath={`${BASE_URL}icon_card.glb`} label="Проекты" />
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 }}
+                  >
+                    <Card3D key="card-blog" glbPath={`${BASE_URL}icon_card.glb`} label="Блог" />
+                  </motion.div>
                 </div>
               </motion.div>
             )}
