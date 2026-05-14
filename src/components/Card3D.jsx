@@ -1,25 +1,34 @@
-﻿import React, { useState, useRef, useEffect, Suspense } from 'react';
+﻿import React, { useState, useRef, useEffect, Suspense, useMemo } from 'react';
 import { Canvas, useLoader, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment } from '@react-three/drei';
+import * as THREE from 'three';
 
 function Model({ url, rotateXRef, rotateYRef }) {
-  const gltf = useLoader(GLTFLoader, url);
+  const originalScene = useLoader(GLTFLoader, url);
   const group = useRef();
 
-  // Прозрачность всех материалов
+  // Клонируем загруженную сцену для каждого экземпляра,
+  // чтобы избежать конфликтов при повторном использовании одной модели.
+  const clonedScene = useMemo(() => {
+    return originalScene.scene.clone(true); // глубокое клонирование всех мешей и материалов
+  }, [originalScene]);
+
+  // Применяем прозрачность ко всем материалам клонированной сцены
   useEffect(() => {
-    if (!gltf.scene) return;
-    gltf.scene.traverse((child) => {
+    clonedScene.traverse((child) => {
       if (child.isMesh && child.material) {
-        const mat = child.material;
-        mat.transparent = true;
-        mat.opacity = 0.3;
-        mat.depthWrite = false;
-        mat.needsUpdate = true;
+        // Убедимся, что у каждого материала свой экземпляр
+        const mat = Array.isArray(child.material) ? child.material : [child.material];
+        mat.forEach((m) => {
+          m.transparent = true;
+          m.opacity = 0.3;
+          m.depthWrite = false;
+          m.needsUpdate = true;
+        });
       }
     });
-  }, [gltf]);
+  }, [clonedScene]);
 
   useFrame((_, delta) => {
     if (group.current) {
@@ -30,7 +39,7 @@ function Model({ url, rotateXRef, rotateYRef }) {
 
   return (
     <group ref={group} dispose={null}>
-      <primitive object={gltf.scene} scale={0.8} position={[0, 0, 0]} />
+      <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
     </group>
   );
 }
@@ -88,7 +97,7 @@ export default function Card3D({ glbPath, className = '' }) {
         border: 'none',
         boxShadow: 'none',
         margin: '8px',
-        cursor: 'pointer',       // ← теперь курсор меняется
+        cursor: 'pointer',
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}

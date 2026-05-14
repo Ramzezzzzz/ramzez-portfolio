@@ -244,7 +244,7 @@ export default function HomePage() {
 
   // Параллакс
   const backgroundOffset = {
-    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.0,  // уменьшено для мобильных
+    x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.0,
     y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.4,
   };
   const personaOffset = {
@@ -271,7 +271,7 @@ export default function HomePage() {
         </button>
       )}
 
-      {/* Слой 0: фон с расширенными границами – ещё шире, чтобы не было чёрных полос */}
+      {/* Слой 0: фон с расширенными границами */}
       <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "130vw", height: "130vh", left: "-15vw", top: "-15vh" }}>
         <div
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
@@ -347,45 +347,45 @@ export default function HomePage() {
         />
       </ParallaxLayer>
 
-      {/* Слой 2: персонаж */}
-      <ParallaxLayer
-        offset={personaOffset}
-        className="absolute inset-0 z-10 flex items-end justify-center"
-        style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
-      >
-        <motion.img
-          src={
-            dialogueIndex >= 3 && personaOriginalsReady
-              ? `${BASE_URL}images/portfolio_ramzez_right.png`
-              : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
-          }
-          alt="Ramzez right"
-          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
-          style={{
-            opacity: activeImage === "right" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-            transition: 'opacity 0.7s ease-in-out',
-          }}
-          onClick={nextDialogue}
-        />
-        <motion.img
-          src={
-            dialogueIndex >= 3 && personaOriginalsReady
-              ? `${BASE_URL}images/portfolio_ramzez_left.png`
-              : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
-          }
-          alt="Ramzez left"
-          className="object-contain cursor-pointer absolute bottom-0 left-1/2 -translate-x-1/2"
-          style={{
-            opacity: activeImage === "left" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-            transition: 'opacity 0.7s ease-in-out',
-          }}
-          onClick={nextDialogue}
-        />
-      </ParallaxLayer>
+      {/* Единственный слой персонажа (без лишнего cursor-pointer) */}
+        <ParallaxLayer
+          offset={personaOffset}
+          className="absolute inset-0 z-10 flex items-end justify-center"
+          style={{ opacity: personaOpacity, transition: 'opacity 0.5s' }}
+        >
+          <motion.img
+            src={
+              dialogueIndex >= 3 && personaOriginalsReady
+                ? `${BASE_URL}images/portfolio_ramzez_right.png`
+                : `${BASE_URL}images/compress/portfolio_ramzez_right.png`
+            }
+            alt="Ramzez right"
+            className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+            style={{
+              opacity: activeImage === "right" ? 1 : 0,
+              maxWidth: "none",
+              maxHeight: `${personaScale * 100}vh`,
+              transition: 'opacity 0.7s ease-in-out',
+            }}
+            onClick={nextDialogue}
+          />
+          <motion.img
+            src={
+              dialogueIndex >= 3 && personaOriginalsReady
+                ? `${BASE_URL}images/portfolio_ramzez_left.png`
+                : `${BASE_URL}images/compress/portfolio_ramzez_left.png`
+            }
+            alt="Ramzez left"
+            className="object-contain absolute bottom-0 left-1/2 -translate-x-1/2"
+            style={{
+              opacity: activeImage === "left" ? 1 : 0,
+              maxWidth: "none",
+              maxHeight: `${personaScale * 100}vh`,
+              transition: 'opacity 0.7s ease-in-out',
+            }}
+            onClick={nextDialogue}
+          />
+        </ParallaxLayer>
 
       {/* Статичный слой для облаков и картинок */}
       <div className="absolute inset-0 z-20 pointer-events-none">
@@ -448,10 +448,10 @@ export default function HomePage() {
                   <button onClick={() => {}} className="flex items-center justify-center gap-3 px-6 py-4 sm:px-8 sm:py-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg hover:bg-white/20 transition-all text-white font-semibold">
                     <PenTool className="w-5 h-5 sm:w-6 sm:h-6" /> Блог
                   </button>
-<div className="flex justify-center gap-6 mt-4">
-  <Card3D key="card-left" glbPath={`${BASE_URL}icon_card.glb`} />
-  <Card3D key="card-right" glbPath={`${BASE_URL}icon_card.glb`} />
-</div>
+                </div>
+                <div className="flex justify-center gap-6 mt-4">
+                  <Card3D key="card-left" glbPath={`${BASE_URL}icon_card.glb`} />
+                  <Card3D key="card-right" glbPath={`${BASE_URL}icon_card.glb`} />
                 </div>
               </motion.div>
             )}
