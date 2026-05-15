@@ -455,7 +455,7 @@ export default function HomePage() {
                 animate={{ opacity: 1 }}
                 className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
-                <div className="absolute inset-0 flex items-center justify-center gap-6 sm:gap-22 lg:gap-80 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center gap-10 sm:gap-22 lg:gap-80 pointer-events-none">
                   <Card3D
                     key="card-projects"
                     glbPath={`${BASE_URL}icon_card.glb`}
