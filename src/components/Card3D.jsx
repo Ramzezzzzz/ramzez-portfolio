@@ -4,24 +4,26 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-function Model({ url, rotateXRef, rotateYRef, label }) {
+function Model({ url, rotateXRef, rotateYRef, label, hover }) {
   const originalScene = useLoader(GLTFLoader, url);
   const group = useRef();
   const clonedScene = useMemo(() => originalScene.scene.clone(true), [originalScene]);
 
+  // Обновляем прозрачность материалов при изменении hover
   useEffect(() => {
+    const targetOpacity = hover ? 0.75 : 0.35;
     clonedScene.traverse((child) => {
       if (child.isMesh && child.material) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((mat) => {
           mat.transparent = true;
-          mat.opacity = 0.85;
+          mat.opacity = targetOpacity;
           mat.depthWrite = false;
           mat.needsUpdate = true;
         });
       }
     });
-  }, [clonedScene]);
+  }, [hover, clonedScene]);
 
   useFrame((_, delta) => {
     if (group.current) {
@@ -33,14 +35,28 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
   return (
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
+
+      {/* Свечение позади основного текста */}
       <Text
-        position={[0, 0.1, 0.25]}   // центр, слегка приподнят над моделью
+        position={[0, 0.1, 0.24]}
+        fontSize={0.26}
+        color="#ff6666"      // красноватое свечение
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0.4}
+        font={undefined}
+      >
+        {label}
+      </Text>
+
+      {/* Основной текст */}
+      <Text
+        position={[0, 0.1, 0.25]}
         fontSize={0.26}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.02}
-        outlineColor="#000000"
+        font={undefined}
       >
         {label}
       </Text>
@@ -56,7 +72,6 @@ export default function Card3D({ glbPath, label, className = '' }) {
   const rafId = useRef(null);
   const touchPos = useRef({ x: 0, y: 0 });
 
-  // Общий обработчик для мыши и касаний
   const updateRotation = (clientX, clientY) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
@@ -68,7 +83,7 @@ export default function Card3D({ glbPath, label, className = '' }) {
     rotateXRef.current = Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
   };
 
-  // Мышь
+  // Мышь (на всём окне)
   const handleMouseMove = (e) => {
     if (!rafId.current) {
       rafId.current = requestAnimationFrame(() => {
@@ -78,7 +93,7 @@ export default function Card3D({ glbPath, label, className = '' }) {
     }
   };
 
-  // Касания (мобильные)
+  // Касания – только на самой карточке, не мешают кнопкам
   const handleTouchMove = (e) => {
     e.preventDefault();
     if (e.touches.length > 0) {
@@ -109,19 +124,19 @@ export default function Card3D({ glbPath, label, className = '' }) {
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseleave', resetRotation);
-    // Мобильные слушатели
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: false });
-    window.addEventListener('touchend', resetRotation);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseleave', resetRotation);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', resetRotation);
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
   }, []);
+
+  // Мобильные слушатели вешаем на сам div карточки
+  const touchHandlers = {
+    onTouchStart: handleTouchStart,
+    onTouchMove: handleTouchMove,
+    onTouchEnd: resetRotation,
+  };
 
   return (
     <div
@@ -139,7 +154,7 @@ export default function Card3D({ glbPath, label, className = '' }) {
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={resetRotation}
-      // Мобильные hover‑состояния не нужны, но можно оставить
+      {...touchHandlers}
     >
       <Canvas
         camera={{ position: [0, 0.5, 3], fov: 45 }}
@@ -148,7 +163,7 @@ export default function Card3D({ glbPath, label, className = '' }) {
         <ambientLight intensity={0.5} />
         <directionalLight position={[5, 5, 5]} intensity={0.8} />
         <Suspense fallback={null}>
-          <Model url={glbPath} rotateXRef={rotateXRef} rotateYRef={rotateYRef} label={label} />
+          <Model url={glbPath} rotateXRef={rotateXRef} rotateYRef={rotateYRef} label={label} hover={hover} />
         </Suspense>
         <Environment preset="city" />
       </Canvas>
