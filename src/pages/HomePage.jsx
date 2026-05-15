@@ -458,8 +458,8 @@ export default function HomePage() {
   <div
     className="pointer-events-auto absolute"
     style={{
-      left: '-3%',       // отступ слева (можно отрицательным, чтобы вышло за экран)
-      bottom: '33%',     // высота над нижним краем (в процентах или px)
+      left: isMobile ? '-3%' : '25%',   // мобилки: ближе к центру, десктоп: выходит за край
+      bottom: isMobile ? '40%' : '50%', // мобилки: выше, десктоп: ниже
     }}
   >
     <Card3D
@@ -472,8 +472,8 @@ export default function HomePage() {
   <div
     className="pointer-events-auto absolute"
     style={{
-      right: '-3%',      // отступ справа (можно отрицательным)
-      bottom: '33%',    // та же высота
+      right: isMobile ? '-3%' : '25%',
+      bottom: isMobile ? '40%' : '50%',
     }}
   >
     <Card3D
