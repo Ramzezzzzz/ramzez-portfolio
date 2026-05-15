@@ -15,7 +15,7 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((mat) => {
           mat.transparent = true;
-          mat.opacity = 0.35;
+          mat.opacity = 0.85;
           mat.depthWrite = false;
           mat.needsUpdate = true;
         });
@@ -34,8 +34,8 @@ function Model({ url, rotateXRef, rotateYRef, label }) {
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
       <Text
-        position={[0, -0.9, 0.3]}
-        fontSize={0.26}          // чуть крупнее для 160px канваса
+        position={[0, 0.1, 0.25]}   // центр, слегка приподнят над моделью
+        fontSize={0.26}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
@@ -54,28 +54,53 @@ export default function Card3D({ glbPath, label, className = '' }) {
   const rotateXRef = useRef(0);
   const rotateYRef = useRef(0);
   const rafId = useRef(null);
-  const mousePos = useRef({ x: 0, y: 0 });
+  const touchPos = useRef({ x: 0, y: 0 });
 
+  // Общий обработчик для мыши и касаний
+  const updateRotation = (clientX, clientY) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const normX = (clientX - centerX) / (rect.width / 2);
+    const normY = (clientY - centerY) / (rect.height / 2);
+    rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
+    rotateXRef.current = Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
+  };
+
+  // Мышь
   const handleMouseMove = (e) => {
-    mousePos.current.x = e.clientX;
-    mousePos.current.y = e.clientY;
     if (!rafId.current) {
       rafId.current = requestAnimationFrame(() => {
-        if (cardRef.current) {
-          const rect = cardRef.current.getBoundingClientRect();
-          const centerX = rect.left + rect.width / 2;
-          const centerY = rect.top + rect.height / 2;
-          const normX = (mousePos.current.x - centerX) / (rect.width / 2);
-          const normY = (mousePos.current.y - centerY) / (rect.height / 2);
-          rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
-          rotateXRef.current = Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
-        }
+        updateRotation(e.clientX, e.clientY);
         rafId.current = null;
       });
     }
   };
 
-  const handleMouseLeave = () => {
+  // Касания (мобильные)
+  const handleTouchMove = (e) => {
+    e.preventDefault();
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      if (!rafId.current) {
+        rafId.current = requestAnimationFrame(() => {
+          updateRotation(touch.clientX, touch.clientY);
+          rafId.current = null;
+        });
+      }
+    }
+  };
+
+  const handleTouchStart = (e) => {
+    e.preventDefault();
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      updateRotation(touch.clientX, touch.clientY);
+    }
+  };
+
+  const resetRotation = () => {
     rotateXRef.current = 0;
     rotateYRef.current = 0;
     setHover(false);
@@ -83,10 +108,17 @@ export default function Card3D({ glbPath, label, className = '' }) {
 
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseleave', resetRotation);
+    // Мобильные слушатели
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('touchend', resetRotation);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mouseleave', resetRotation);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', resetRotation);
       if (rafId.current) cancelAnimationFrame(rafId.current);
     };
   }, []);
@@ -96,17 +128,18 @@ export default function Card3D({ glbPath, label, className = '' }) {
       ref={cardRef}
       className={`transition-transform duration-300 ${className}`}
       style={{
-        width: '160px',          // увеличенный размер
+        width: '160px',
         height: '160px',
         background: 'transparent',
         border: 'none',
-        boxShadow: 'none',       // свечение убрано полностью
+        boxShadow: 'none',
         transform: hover ? 'scale(1.15)' : 'scale(1)',
         cursor: 'pointer',
         overflow: 'visible',
       }}
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseLeave={resetRotation}
+      // Мобильные hover‑состояния не нужны, но можно оставить
     >
       <Canvas
         camera={{ position: [0, 0.5, 3], fov: 45 }}

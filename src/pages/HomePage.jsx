@@ -134,13 +134,13 @@ export default function HomePage() {
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
 
-  // Предзагрузка 3D-модели и шрифта для карточек
+    // Предзагрузка 3D-модели для карточек
     useEffect(() => {
       const loader = new GLTFLoader();
-      loader.load(`${BASE_URL}icon_card.glb`);
-      // Предзагрузка шрифта (если используется внешний)
-      const font = new FontFace('Inter', 'url(/fonts/Inter-Bold.ttf)');
-      font.load().then(() => document.fonts.add(font));
+      // Загружаем модель и кэшируем её (Three.js кэширует автоматически по URL)
+      loader.load(`${BASE_URL}icon_card.glb`, (gltf) => {
+        console.log('3D-модель предзагружена');
+      });
     }, []);
 
   // Разворот персонажа на десктопе по положению курсора
