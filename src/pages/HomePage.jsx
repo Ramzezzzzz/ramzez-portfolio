@@ -455,23 +455,19 @@ export default function HomePage() {
                 animate={{ opacity: 1 }}
                 className="pointer-events-auto w-full max-w-6xl mx-auto"
               >
-                <div className="absolute inset-0 flex items-center justify-between px-4 sm:px-12 lg:px-24 pointer-events-none">
-                  <div className="pointer-events-auto">
-                    <Card3D
-                      key="card-projects"
-                      glbPath={`${BASE_URL}icon_card.glb`}
-                      label="Проекты"
-                      isGyroActive={gyroPermissionGranted}
-                    />
-                  </div>
-                  <div className="pointer-events-auto">
-                    <Card3D
-                      key="card-blog"
-                      glbPath={`${BASE_URL}icon_card.glb`}
-                      label="Блог"
-                      isGyroActive={gyroPermissionGranted}
-                    />
-                  </div>
+                <div className="absolute inset-0 flex items-center justify-center gap-6 sm:gap-22 lg:gap-80 pointer-events-none">
+                  <Card3D
+                    key="card-projects"
+                    glbPath={`${BASE_URL}icon_card.glb`}
+                    label="Проекты"
+                    isGyroActive={gyroPermissionGranted}
+                  />
+                  <Card3D
+                    key="card-blog"
+                    glbPath={`${BASE_URL}icon_card.glb`}
+                    label="Блог"
+                    isGyroActive={gyroPermissionGranted}
+                  />
                 </div>
               </motion.div>
             )}

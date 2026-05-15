@@ -66,12 +66,11 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
   const [modelLoaded, setModelLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const cardRef = useRef(null);
-  const rotateXRef = useRef(0.05 * Math.PI);
+  const rotateXRef = useRef(0.05 * Math.PI); // базовый наклон (глубина)
   const rotateYRef = useRef(0);
   const rafId = useRef(null);
-  const touchPos = useRef({ x: 0, y: 0 });
 
-  // Предзагрузка модели (проверка)
+  // Предзагрузка модели
   useEffect(() => {
     const loader = new GLTFLoader();
     loader.load(
@@ -87,17 +86,21 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     );
   }, [glbPath]);
 
-  // Гироскоп (усиленный)
+  // Гироскоп (мобильные) — усиленный и с инвертированной вертикалью
   useEffect(() => {
     if (!isGyroActive) return;
 
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0;
-      const beta = event.beta || 0;
+      const gamma = event.gamma || 0;   // влево-вправо
+      const beta = event.beta || 0;     // вперёд-назад
+
+      // Горизонталь: больше амплитуда
       const normGamma = gamma / 90;
+      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * 0.3;
+
+      // Вертикаль: инвертируем и усиливаем
       const normBeta = (beta - 45) / 90;
-      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * 0.3; // усилено
-      rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normBeta)) * Math.PI * 0.2;
+      rotateXRef.current = 0.05 * Math.PI + (-normBeta) * Math.PI * 0.3;
     };
 
     if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
@@ -113,7 +116,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [isGyroActive]);
 
-  // Мышь (десктоп)
+  // Мышь (десктоп) — симметричный наклон вверх/вниз
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
     if (!rafId.current) {
@@ -123,8 +126,9 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
         const centerY = rect.top + rect.height / 2;
         const normX = (e.clientX - centerX) / (rect.width / 2);
         const normY = (e.clientY - centerY) / (rect.height / 2);
+
         rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
-        rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
+        rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * 0.12;
         rafId.current = null;
       });
     }
@@ -145,7 +149,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
           const normX = (touch.clientX - centerX) / (rect.width / 2);
           const normY = (touch.clientY - centerY) / (rect.height / 2);
           rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
-          rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
+          rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * 0.12;
           rafId.current = null;
         });
       }
@@ -168,7 +172,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     };
   }, []);
 
-  // Показываем заглушку, если модель не загружена
+  // Заглушка
   if (!modelLoaded || loadError) {
     return (
       <div
