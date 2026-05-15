@@ -9,7 +9,6 @@ function Model({ url, rotateXRef, rotateYRef, label, hover }) {
   const group = useRef();
   const clonedScene = useMemo(() => originalScene.scene.clone(true), [originalScene]);
 
-  // Прозрачность материалов
   useEffect(() => {
     const targetOpacity = hover ? 0.75 : 0.35;
     clonedScene.traverse((child) => {
@@ -36,7 +35,6 @@ function Model({ url, rotateXRef, rotateYRef, label, hover }) {
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
 
-      {/* Свечение позади основного текста */}
       <Text
         position={[0, 0.1, 0.24]}
         fontSize={0.26}
@@ -49,7 +47,6 @@ function Model({ url, rotateXRef, rotateYRef, label, hover }) {
         {label}
       </Text>
 
-      {/* Основной текст */}
       <Text
         position={[0, 0.1, 0.25]}
         fontSize={0.26}
@@ -64,27 +61,43 @@ function Model({ url, rotateXRef, rotateYRef, label, hover }) {
   );
 }
 
-export default function Card3D({ glbPath, label, className = '' }) {
+export default function Card3D({ glbPath, label, className = '', isGyroActive = false, fallback: FallbackComponent }) {
   const [hover, setHover] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const cardRef = useRef(null);
-  const rotateXRef = useRef(0);
+  const rotateXRef = useRef(0.05 * Math.PI);
   const rotateYRef = useRef(0);
   const rafId = useRef(null);
+  const touchPos = useRef({ x: 0, y: 0 });
 
-  // Начальный наклон (5% глубины)
+  // Предзагрузка модели (проверка)
   useEffect(() => {
-    rotateXRef.current = 0.05 * Math.PI; // примерно 9°
-  }, []);
+    const loader = new GLTFLoader();
+    loader.load(
+      glbPath,
+      () => {
+        setModelLoaded(true);
+        setLoadError(false);
+      },
+      undefined,
+      () => {
+        setLoadError(true);
+      }
+    );
+  }, [glbPath]);
 
-  // Гироскоп (мобильные)
+  // Гироскоп (усиленный)
   useEffect(() => {
+    if (!isGyroActive) return;
+
     const handleOrientation = (event) => {
-      const gamma = event.gamma || 0; // -90..90 (влево-вправо)
-      const beta = event.beta || 0;   // -180..180 (вперёд-назад)
+      const gamma = event.gamma || 0;
+      const beta = event.beta || 0;
       const normGamma = gamma / 90;
-      const normBeta = (beta - 45) / 90; // смещаем, чтобы нейтральное положение было при 45°
-      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * 0.18;
-      rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normBeta)) * Math.PI * 0.12;
+      const normBeta = (beta - 45) / 90;
+      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * 0.3; // усилено
+      rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normBeta)) * Math.PI * 0.2;
     };
 
     if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
@@ -98,7 +111,7 @@ export default function Card3D({ glbPath, label, className = '' }) {
     }
 
     return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, []);
+  }, [isGyroActive]);
 
   // Мышь (десктоп)
   const handleMouseMove = (e) => {
@@ -114,6 +127,28 @@ export default function Card3D({ glbPath, label, className = '' }) {
         rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
         rafId.current = null;
       });
+    }
+  };
+
+  // Тач (если гироскоп не активен)
+  const handleTouchMove = (e) => {
+    if (isGyroActive) return;
+    e.preventDefault();
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      if (!rafId.current) {
+        rafId.current = requestAnimationFrame(() => {
+          if (!cardRef.current) return;
+          const rect = cardRef.current.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const normX = (touch.clientX - centerX) / (rect.width / 2);
+          const normY = (touch.clientY - centerY) / (rect.height / 2);
+          rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
+          rotateXRef.current = 0.05 * Math.PI + Math.max(-1, Math.min(1, normY)) * Math.PI * 0.12;
+          rafId.current = null;
+        });
+      }
     }
   };
 
@@ -133,6 +168,22 @@ export default function Card3D({ glbPath, label, className = '' }) {
     };
   }, []);
 
+  // Показываем заглушку, если модель не загружена
+  if (!modelLoaded || loadError) {
+    return (
+      <div
+        className={`w-40 h-40 flex items-center justify-center bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl shadow-lg text-white font-semibold text-lg cursor-pointer transition-transform duration-300 ${className}`}
+        style={{
+          transform: hover ? 'scale(1.15)' : 'scale(1)',
+        }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+      >
+        {FallbackComponent ? <FallbackComponent /> : label}
+      </div>
+    );
+  }
+
   return (
     <div
       ref={cardRef}
@@ -149,6 +200,8 @@ export default function Card3D({ glbPath, label, className = '' }) {
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={resetRotation}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={resetRotation}
     >
       <Canvas
         camera={{ position: [0, 0.5, 3], fov: 45 }}

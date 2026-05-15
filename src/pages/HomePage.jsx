@@ -450,24 +450,30 @@ export default function HomePage() {
               </motion.div>
             )}
             {showInterface && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-auto w-full max-w-6xl mx-auto">
-                <div className="flex justify-center gap-6 mt-4">
-                    <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    >
-                    <Card3D key="card-projects" glbPath={`${BASE_URL}icon_card.glb`} label="Проекты" />
-                    </motion.div>
-                    <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    >
-                    <Card3D key="card-blog" glbPath={`${BASE_URL}icon_card.glb`} label="Блог" />
-                    </motion.div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="pointer-events-auto w-full max-w-6xl mx-auto"
+              >
+                <div className="absolute inset-0 flex items-center justify-between px-4 sm:px-12 lg:px-24 pointer-events-none">
+                  <div className="pointer-events-auto">
+                    <Card3D
+                      key="card-projects"
+                      glbPath={`${BASE_URL}icon_card.glb`}
+                      label="Проекты"
+                      isGyroActive={gyroPermissionGranted}
+                    />
+                  </div>
+                  <div className="pointer-events-auto">
+                    <Card3D
+                      key="card-blog"
+                      glbPath={`${BASE_URL}icon_card.glb`}
+                      label="Блог"
+                      isGyroActive={gyroPermissionGranted}
+                    />
+                  </div>
                 </div>
-                </motion.div>
+              </motion.div>
             )}
           </AnimatePresence>
 
