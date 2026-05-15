@@ -4,6 +4,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
+// ── Настройки наклона (меняйте здесь) ──
+const MOBILE_AMP_X = 0.5;   // амплитуда по вертикали на мобилках (было 0.3)
+const MOBILE_AMP_Y = 0.5;   // амплитуда по горизонтали на мобилках (было 0.3)
+const DESKTOP_AMP_X = 0.06; // амплитуда по вертикали на десктопе (было 0.12)
+const DESKTOP_AMP_Y = 0.09; // амплитуда по горизонтали на десктопе (было 0.18)
+
 function Model({ url, rotateXRef, rotateYRef, label, hover }) {
   const originalScene = useLoader(GLTFLoader, url);
   const group = useRef();
@@ -70,6 +76,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
   const rotateYRef = useRef(0);
   const rafId = useRef(null);
 
+  // Предзагрузка модели
   useEffect(() => {
     const loader = new GLTFLoader();
     loader.load(
@@ -85,7 +92,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     );
   }, [glbPath]);
 
-  // Гироскоп (мобильные) – без инверсии по вертикали
+  // Гироскоп (мобильные)
   useEffect(() => {
     if (!isGyroActive) return;
 
@@ -94,11 +101,10 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
       const beta = event.beta || 0;
 
       const normGamma = gamma / 90;
-      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * 0.3;
+      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * MOBILE_AMP_Y;
 
       const normBeta = (beta - 45) / 90;
-      // Убрали знак минус, теперь наклон прямой
-      rotateXRef.current = 0.05 * Math.PI + normBeta * Math.PI * 0.3;
+      rotateXRef.current = 0.05 * Math.PI + normBeta * Math.PI * MOBILE_AMP_X;
     };
 
     if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
@@ -125,8 +131,8 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
         const normX = (e.clientX - centerX) / (rect.width / 2);
         const normY = (e.clientY - centerY) / (rect.height / 2);
 
-        rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
-        rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * 0.12;
+        rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
+        rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * DESKTOP_AMP_X;
         rafId.current = null;
       });
     }
@@ -146,8 +152,8 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
           const centerY = rect.top + rect.height / 2;
           const normX = (touch.clientX - centerX) / (rect.width / 2);
           const normY = (touch.clientY - centerY) / (rect.height / 2);
-          rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * 0.18;
-          rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * 0.12;
+          rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
+          rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * DESKTOP_AMP_X;
           rafId.current = null;
         });
       }
@@ -170,6 +176,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     };
   }, []);
 
+  // Заглушка
   if (!modelLoaded || loadError) {
     return (
       <div
@@ -200,7 +207,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
         overflow: 'visible',
       }}
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={resetRotation}
+      onMouseLeave={() => setHover(false)}
       onTouchMove={handleTouchMove}
       onTouchEnd={resetRotation}
     >
