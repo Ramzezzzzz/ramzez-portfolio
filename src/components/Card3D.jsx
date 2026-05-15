@@ -7,7 +7,7 @@ import * as THREE from 'three';
 // ── Настройки наклона (меняйте здесь) ──
 const MOBILE_AMP_X = 0.5;   // амплитуда по вертикали на мобилках (было 0.3)
 const MOBILE_AMP_Y = 0.5;   // амплитуда по горизонтали на мобилках (было 0.3)
-const DESKTOP_AMP_X = 0.06; // амплитуда по вертикали на десктопе (было 0.12)
+const DESKTOP_AMP_X = 0.05; // амплитуда по вертикали на десктопе (было 0.12)
 const DESKTOP_AMP_Y = 0.09; // амплитуда по горизонтали на десктопе (было 0.18)
 
 function Model({ url, rotateXRef, rotateYRef, label, hover }) {

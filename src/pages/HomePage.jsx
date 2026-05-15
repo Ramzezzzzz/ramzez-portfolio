@@ -450,26 +450,40 @@ export default function HomePage() {
               </motion.div>
             )}
             {showInterface && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="pointer-events-auto w-full max-w-6xl mx-auto"
-              >
-                <div className="absolute inset-0 flex items-center justify-center gap-10 sm:gap-22 lg:gap-80 pointer-events-none">
-                  <Card3D
-                    key="card-projects"
-                    glbPath={`${BASE_URL}icon_card.glb`}
-                    label="Проекты"
-                    isGyroActive={gyroPermissionGranted}
-                  />
-                  <Card3D
-                    key="card-blog"
-                    glbPath={`${BASE_URL}icon_card.glb`}
-                    label="Блог"
-                    isGyroActive={gyroPermissionGranted}
-                  />
-                </div>
-              </motion.div>
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  className="pointer-events-none absolute inset-0 z-20"
+>
+  <div
+    className="pointer-events-auto absolute"
+    style={{
+      left: '-3%',       // отступ слева (можно отрицательным, чтобы вышло за экран)
+      bottom: '33%',     // высота над нижним краем (в процентах или px)
+    }}
+  >
+    <Card3D
+      key="card-projects"
+      glbPath={`${BASE_URL}icon_card.glb`}
+      label="Проекты"
+      isGyroActive={gyroPermissionGranted}
+    />
+  </div>
+  <div
+    className="pointer-events-auto absolute"
+    style={{
+      right: '-3%',      // отступ справа (можно отрицательным)
+      bottom: '33%',    // та же высота
+    }}
+  >
+    <Card3D
+      key="card-blog"
+      glbPath={`${BASE_URL}icon_card.glb`}
+      label="Блог"
+      isGyroActive={gyroPermissionGranted}
+    />
+  </div>
+</motion.div>
             )}
           </AnimatePresence>
 
