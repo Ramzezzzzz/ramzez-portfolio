@@ -4,11 +4,11 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-// ── Настройки наклона ──
-const MOBILE_AMP_X = 0.5;
-const MOBILE_AMP_Y = 0.5;
-const DESKTOP_AMP_X = 0.06;
-const DESKTOP_AMP_Y = 0.09;
+// ── Настройки наклона (меняйте здесь) ──
+const MOBILE_AMP_X = 0.5;   // амплитуда по вертикали на мобилках (было 0.3)
+const MOBILE_AMP_Y = 0.5;   // амплитуда по горизонтали на мобилках (было 0.3)
+const DESKTOP_AMP_X = 0.05; // амплитуда по вертикали на десктопе (было 0.12)
+const DESKTOP_AMP_Y = 0.09; // амплитуда по горизонтали на десктопе (было 0.18)
 
 function Model({ url, rotateXRef, rotateYRef, label, hover }) {
   const originalScene = useLoader(GLTFLoader, url);
@@ -76,6 +76,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
   const rotateYRef = useRef(0);
   const rafId = useRef(null);
 
+  // Предзагрузка модели
   useEffect(() => {
     const loader = new GLTFLoader();
     loader.load(
@@ -119,32 +120,43 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [isGyroActive]);
 
-  // Обработчики мыши — только на этой карточке
+  // Мышь (десктоп)
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const normX = (e.clientX - centerX) / (rect.width / 2);
-    const normY = (e.clientY - centerY) / (rect.height / 2);
+    if (!rafId.current) {
+      rafId.current = requestAnimationFrame(() => {
+        const rect = cardRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const normX = (e.clientX - centerX) / (rect.width / 2);
+        const normY = (e.clientY - centerY) / (rect.height / 2);
 
-    rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
-    rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * DESKTOP_AMP_X;
+        rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
+        rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * DESKTOP_AMP_X;
+        rafId.current = null;
+      });
+    }
   };
 
+  // Тач (если гироскоп не активен)
   const handleTouchMove = (e) => {
     if (isGyroActive) return;
     e.preventDefault();
     if (e.touches.length > 0) {
       const touch = e.touches[0];
-      if (!cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const normX = (touch.clientX - centerX) / (rect.width / 2);
-      const normY = (touch.clientY - centerY) / (rect.height / 2);
-      rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
-      rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * DESKTOP_AMP_X;
+      if (!rafId.current) {
+        rafId.current = requestAnimationFrame(() => {
+          if (!cardRef.current) return;
+          const rect = cardRef.current.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          const normX = (touch.clientX - centerX) / (rect.width / 2);
+          const normY = (touch.clientY - centerY) / (rect.height / 2);
+          rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
+          rotateXRef.current = 0.05 * Math.PI + normY * Math.PI * DESKTOP_AMP_X;
+          rafId.current = null;
+        });
+      }
     }
   };
 
@@ -153,6 +165,16 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
     rotateYRef.current = 0;
     setHover(false);
   };
+
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', resetRotation);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', resetRotation);
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+    };
+  }, []);
 
   // Заглушка
   if (!modelLoaded || loadError) {
@@ -185,8 +207,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
         overflow: 'visible',
       }}
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={resetRotation}
-      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHover(false)}
       onTouchMove={handleTouchMove}
       onTouchEnd={resetRotation}
     >
