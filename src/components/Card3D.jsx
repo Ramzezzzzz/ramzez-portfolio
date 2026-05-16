@@ -12,7 +12,7 @@ const MAX_VERTICAL_DOWN = Math.PI * 0.29; // угол при наклоне вн
 // ── Настройки наклона для МОБИЛЬНЫХ (гироскоп) ──
 const MOBILE_AMP_Y = 0.5;                    // горизонталь на телефоне
 const MOBILE_MAX_VERTICAL_UP = Math.PI * 0.8;   // угол при наклоне вверх на телефоне (усилен)
-const MOBILE_MAX_VERTICAL_DOWN = Math.PI * 0.6; // угол при наклоне вниз на телефоне (усилен)
+const MOBILE_MAX_VERTICAL_DOWN = Math.PI * 0.5; // угол при наклоне вниз на телефоне (усилен)
 
 function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   const originalScene = useLoader(GLTFLoader, url);
