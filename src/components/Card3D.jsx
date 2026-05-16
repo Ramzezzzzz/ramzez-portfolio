@@ -4,12 +4,15 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-// ── Настройки наклона ──
-const MOBILE_AMP_Y = 0.5;   // горизонталь на телефоне (гироскоп)
-const MOBILE_AMP_X = 0.9;   // вертикаль на телефоне (гироскоп)
-const DESKTOP_AMP_Y = 0.19; // горизонталь на компьютере
-const MAX_VERTICAL_UP = Math.PI * 0.15;   // угол при наклоне вверх
-const MAX_VERTICAL_DOWN = Math.PI * 0.29; // угол при наклоне вниз
+// ── Настройки наклона для ДЕСКТОПА ──
+const DESKTOP_AMP_Y = 0.19;               // горизонталь на компьютере
+const MAX_VERTICAL_UP = Math.PI * 0.15;   // угол при наклоне вверх на компьютере
+const MAX_VERTICAL_DOWN = Math.PI * 0.29; // угол при наклоне вниз на компьютере
+
+// ── Настройки наклона для МОБИЛЬНЫХ (гироскоп) ──
+const MOBILE_AMP_Y = 0.5;                    // горизонталь на телефоне
+const MOBILE_MAX_VERTICAL_UP = Math.PI * 0.8;   // угол при наклоне вверх на телефоне (усилен)
+const MOBILE_MAX_VERTICAL_DOWN = Math.PI * 0.6; // угол при наклоне вниз на телефоне (усилен)
 
 function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   const originalScene = useLoader(GLTFLoader, url);
@@ -48,29 +51,11 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   return (
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
-      {/* Свечение позади */}
-      <Text
-        position={[0, 0.1, 0.24]}
-        fontSize={0.26}
-        color="#ff0000"
-        anchorX="center"
-        anchorY="middle"
-        fillOpacity={0.9}
-        font={undefined}
-      >
+      <Text position={[0, 0.1, 0.24]} fontSize={0.26} color="#ff0000" anchorX="center" anchorY="middle" fillOpacity={0.9} font={undefined}>
         {label}
       </Text>
-      {/* Основной текст с красной обводкой при hover */}
-      <Text
-        position={[0, 0.1, 0.25]}
-        fontSize={0.26}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-        font={undefined}
-        outlineWidth={hoverRef.current ? 0.02 : 0}
-        outlineColor="#ff0000"
-      >
+      <Text position={[0, 0.1, 0.25]} fontSize={0.26} color="#ffffff" anchorX="center" anchorY="middle" font={undefined}
+        outlineWidth={hoverRef.current ? 0.02 : 0} outlineColor="#ff0000">
         {label}
       </Text>
     </group>
@@ -88,18 +73,17 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
     hoverRef.current = hover;
   }, [hover]);
 
-  // Гироскоп (мобильные) – усиленная амплитуда без лишнего ограничения
+  // Гироскоп (мобильные) – использует MOBILE-константы
   useEffect(() => {
     if (!isGyroActive) return;
     const handleOrientation = (event) => {
       const gamma = event.gamma || 0;
       const beta = event.beta || 0;
-      // Ограничиваем нормированные значения, но даём больше свободы за счёт высоких множителей
       const normGamma = Math.max(-1, Math.min(1, gamma / 90));
       const normBeta = Math.max(-1, Math.min(1, (beta - 45) / 90));
 
       rotateYRef.current = baseRotationY + normGamma * Math.PI * MOBILE_AMP_Y;
-      const verticalLimit = normBeta >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
+      const verticalLimit = normBeta >= 0 ? MOBILE_MAX_VERTICAL_UP : MOBILE_MAX_VERTICAL_DOWN; // ← Мобильные лимиты
       rotateXRef.current = normBeta * verticalLimit;
     };
     if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
@@ -112,7 +96,7 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [isGyroActive, baseRotationY]);
 
-  // Глобальное слежение за мышью + индивидуальная подсветка
+  // Глобальное слежение за мышью + индивидуальная подсветка (десктоп)
   useEffect(() => {
     const handleGlobalMouseMove = (e) => {
       if (!cardRef.current) return;
@@ -121,7 +105,7 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
       const centerY = rect.top + rect.height / 2;
       const normX = (e.clientX - centerX) / (rect.width / 2);
       const normY = (e.clientY - centerY) / (rect.height / 2);
-      const verticalLimit = normY >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
+      const verticalLimit = normY >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN; // ← Десктопные лимиты
 
       rotateYRef.current = baseRotationY + Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
       rotateXRef.current = Math.max(-1, Math.min(1, normY)) * verticalLimit;
@@ -143,7 +127,7 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
     };
   }, [baseRotationY]);
 
-  // Тач (если гироскоп не активен)
+  // Тач (если гироскоп не активен) – использует десктопные лимиты
   const handleTouchMove = (e) => {
     if (isGyroActive) return;
     e.preventDefault();
@@ -155,7 +139,7 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
       const centerY = rect.top + rect.height / 2;
       const normX = (touch.clientX - centerX) / (rect.width / 2);
       const normY = (touch.clientY - centerY) / (rect.height / 2);
-      const verticalLimit = normY >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
+      const verticalLimit = normY >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN; // ← Десктопные лимиты
 
       rotateYRef.current = baseRotationY + Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
       rotateXRef.current = Math.max(-1, Math.min(1, normY)) * verticalLimit;
