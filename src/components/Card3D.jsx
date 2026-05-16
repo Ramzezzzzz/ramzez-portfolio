@@ -5,8 +5,8 @@ import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 // ── Настройки наклона ──
-const MOBILE_AMP_Y = 0.85;   // горизонталь на телефоне
-const MOBILE_AMP_X = 0.75;   // вертикаль на телефоне
+const MOBILE_AMP_Y = 0.9;   // горизонталь на телефоне
+const MOBILE_AMP_X = 0.5;   // вертикаль на телефоне
 const DESKTOP_AMP_Y = 0.19; // горизонталь на компьютере
 const MAX_VERTICAL_UP = Math.PI * 0.15;   // угол при наклоне вверх (верх карточки уходит вглубь)
 const MAX_VERTICAL_DOWN = Math.PI * 0.29; // угол при наклоне вниз (можно оставить как было)
