@@ -8,8 +8,8 @@ import * as THREE from 'three';
 const MOBILE_AMP_Y = 0.5;   // горизонталь на телефоне
 const MOBILE_AMP_X = 0.5;   // вертикаль на телефоне
 const DESKTOP_AMP_Y = 0.19; // горизонталь на компьютере
-const MAX_VERTICAL_UP = Math.PI * 0.09;   // угол при наклоне вверх (верх карточки уходит вглубь)
-const MAX_VERTICAL_DOWN = Math.PI * 0.06; // угол при наклоне вниз (можно оставить как было)
+const MAX_VERTICAL_UP = Math.PI * 0.12;   // угол при наклоне вверх (верх карточки уходит вглубь)
+const MAX_VERTICAL_DOWN = Math.PI * 0.26; // угол при наклоне вниз (можно оставить как было)
 
 function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   const originalScene = useLoader(GLTFLoader, url);
@@ -63,7 +63,7 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
 export default function Card3D({ glbPath, label, className = '', isGyroActive = false }) {
   const [hover, setHover] = useState(false);
   const cardRef = useRef(null);
-  const rotateXRef = useRef(0); // без начального наклона
+  const rotateXRef = useRef(-0.15 * Math.PI); // лёгкий наклон 
   const rotateYRef = useRef(0);
   const hoverRef = useRef(false);
 
@@ -148,7 +148,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
   };
 
   const resetRotation = () => {
-    rotateXRef.current = 0;
+    rotateXRef.current = -0.15 * Math.PI;
     rotateYRef.current = 0;
     setHover(false);
   };
