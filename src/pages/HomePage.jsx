@@ -475,6 +475,7 @@ export default function HomePage() {
       key="card-projects"
       glbPath={`${BASE_URL}icon_card.glb`}
       label="Проекты"
+      baseRotationY={0.3}  // смотрит вправо
       isGyroActive={gyroPermissionGranted}
     />
   </div>
@@ -489,6 +490,7 @@ export default function HomePage() {
       key="card-blog"
       glbPath={`${BASE_URL}icon_card.glb`}
       label="Блог"
+      baseRotationY={-0.3} // смотрит влево
       isGyroActive={gyroPermissionGranted}
     />
   </div>

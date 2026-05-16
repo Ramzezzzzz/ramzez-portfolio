@@ -60,12 +60,13 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   );
 }
 
-export default function Card3D({ glbPath, label, className = '', isGyroActive = false }) {
+export default function Card3D({ glbPath, label, baseRotationY = 0, className = '', isGyroActive = false }) {
   const [hover, setHover] = useState(false);
   const cardRef = useRef(null);
   const rotateXRef = useRef(-0.12 * Math.PI); // лёгкий наклон 
-  const rotateYRef = useRef(0.09 * Math.PI);
+  const rotateYRef = useRef(baseRotationY); // вместо useRef(0)
   const hoverRef = useRef(false);
+
 
   useEffect(() => {
     hoverRef.current = hover;
@@ -78,7 +79,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
       const gamma = event.gamma || 0;
       const beta = event.beta || 0;
       const normGamma = gamma / 90;
-      rotateYRef.current = Math.max(-1, Math.min(1, normGamma)) * Math.PI * MOBILE_AMP_Y;
+      rotateYRef.current = baseRotationY + Math.max(-1, Math.min(1, normGamma)) * Math.PI * MOBILE_AMP_Y;
       const normBeta = (beta - 45) / 90;
       const verticalLimit = normBeta >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
       rotateXRef.current = Math.max(-1, Math.min(1, normBeta)) * verticalLimit;
@@ -104,7 +105,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
       const normY = (e.clientY - centerY) / (rect.height / 2);
       const verticalLimit = normY >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
 
-      rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
+      rotateYRef.current = baseRotationY + Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
       rotateXRef.current = Math.max(-1, Math.min(1, normY)) * verticalLimit;
 
       const isHovering = e.clientX >= rect.left && e.clientX <= rect.right &&
@@ -138,7 +139,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
       const normY = (touch.clientY - centerY) / (rect.height / 2);
       const verticalLimit = normY >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
 
-      rotateYRef.current = Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
+      rotateYRef.current = baseRotationY + Math.max(-1, Math.min(1, normX)) * Math.PI * DESKTOP_AMP_Y;
       rotateXRef.current = Math.max(-1, Math.min(1, normY)) * verticalLimit;
 
       const isTouching = touch.clientX >= rect.left && touch.clientX <= rect.right &&
@@ -149,7 +150,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
 
   const resetRotation = () => {
     rotateXRef.current = -0.12 * Math.PI;
-    rotateYRef.current = 0.09 * Math.PI;
+    rotateYRef.current = baseRotationY;
     setHover(false);
   };
 
