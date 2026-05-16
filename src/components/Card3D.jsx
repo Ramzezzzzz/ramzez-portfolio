@@ -51,11 +51,46 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   return (
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
-      <Text position={[0, 0.1, 0.24]} fontSize={0.26} color="#ff0000" anchorX="center" anchorY="middle" fillOpacity={0.9} font={undefined}>
+
+      {/* Основной заголовок */}
+      <Text
+        position={[0, 0.1, 0.25]}
+        fontSize={0.26}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        font={undefined}
+        outlineWidth={hoverRef.current ? 0.02 : 0}
+        outlineColor="#ff0000"
+      >
         {label}
       </Text>
-      <Text position={[0, 0.1, 0.25]} fontSize={0.26} color="#ffffff" anchorX="center" anchorY="middle" font={undefined}
-        outlineWidth={hoverRef.current ? 0.02 : 0} outlineColor="#ff0000">
+
+      {/* Приглашение "перейти" (только при наведении) */}
+      {hoverRef.current && (
+        <Text
+          position={[0, -0.15, 0.25]}
+          fontSize={0.18}
+          color="#00ff88"
+          anchorX="center"
+          anchorY="middle"
+          font={undefined}
+          fillOpacity={1}
+        >
+          перейти
+        </Text>
+      )}
+
+      {/* Свечение позади основного текста (всегда) */}
+      <Text
+        position={[0, 0.1, 0.24]}
+        fontSize={0.26}
+        color="#ff0000"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0.9}
+        font={undefined}
+      >
         {label}
       </Text>
     </group>
