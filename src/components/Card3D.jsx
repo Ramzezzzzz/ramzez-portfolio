@@ -5,11 +5,11 @@ import { Environment, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 // ── Настройки наклона ──
-const MOBILE_AMP_Y = 0.5;   // горизонталь на телефоне
-const MOBILE_AMP_X = 0.9;   // вертикаль на телефоне
+const MOBILE_AMP_Y = 0.9;   // горизонталь на телефоне (гироскоп)
+const MOBILE_AMP_X = 0.9;   // вертикаль на телефоне (гироскоп)
 const DESKTOP_AMP_Y = 0.19; // горизонталь на компьютере
-const MAX_VERTICAL_UP = Math.PI * 0.15;   // угол при наклоне вверх (верх карточки уходит вглубь)
-const MAX_VERTICAL_DOWN = Math.PI * 0.29; // угол при наклоне вниз (можно оставить как было)
+const MAX_VERTICAL_UP = Math.PI * 0.15;   // угол при наклоне вверх
+const MAX_VERTICAL_DOWN = Math.PI * 0.29; // угол при наклоне вниз
 
 function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   const originalScene = useLoader(GLTFLoader, url);
@@ -24,7 +24,6 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   }, [hoverRef.current]);
 
   useFrame((_, delta) => {
-    // Плавное изменение прозрачности
     const step = 0.1;
     currentOpacityRef.current += (targetOpacityRef.current - currentOpacityRef.current) * step;
 
@@ -40,7 +39,6 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
       }
     });
 
-    // Плавный поворот
     if (group.current) {
       group.current.rotation.x += (rotateXRef.current - group.current.rotation.x) * delta * 8;
       group.current.rotation.y += (rotateYRef.current - group.current.rotation.y) * delta * 8;
@@ -50,10 +48,29 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
   return (
     <group ref={group} dispose={null}>
       <primitive object={clonedScene} scale={0.8} position={[0, 0, 0]} />
-      <Text position={[0, 0.1, 0.24]} fontSize={0.26} color="#ff0000" anchorX="center" anchorY="middle" fillOpacity={0.9} font={undefined}>
+      {/* Свечение позади */}
+      <Text
+        position={[0, 0.1, 0.24]}
+        fontSize={0.26}
+        color="#ff0000"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0.9}
+        font={undefined}
+      >
         {label}
       </Text>
-      <Text position={[0, 0.1, 0.25]} fontSize={0.26} color="#ffffff" anchorX="center" anchorY="middle" font={undefined}>
+      {/* Основной текст с красной обводкой при hover */}
+      <Text
+        position={[0, 0.1, 0.25]}
+        fontSize={0.26}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        font={undefined}
+        outlineWidth={hoverRef.current ? 0.02 : 0}
+        outlineColor="#ff0000"
+      >
         {label}
       </Text>
     </group>
@@ -63,26 +80,27 @@ function Model({ url, rotateXRef, rotateYRef, label, hoverRef }) {
 export default function Card3D({ glbPath, label, baseRotationY = 0, className = '', isGyroActive = false }) {
   const [hover, setHover] = useState(false);
   const cardRef = useRef(null);
-  const rotateXRef = useRef(-0.12 * Math.PI); // лёгкий наклон 
-  const rotateYRef = useRef(baseRotationY); // вместо useRef(0)
+  const rotateXRef = useRef(-0.12 * Math.PI);
+  const rotateYRef = useRef(baseRotationY);
   const hoverRef = useRef(false);
-
 
   useEffect(() => {
     hoverRef.current = hover;
   }, [hover]);
 
-  // Гироскоп (мобильные)
+  // Гироскоп (мобильные) – усиленная амплитуда без лишнего ограничения
   useEffect(() => {
     if (!isGyroActive) return;
     const handleOrientation = (event) => {
       const gamma = event.gamma || 0;
       const beta = event.beta || 0;
-      const normGamma = gamma / 90;
-      rotateYRef.current = baseRotationY + Math.max(-1, Math.min(1, normGamma)) * Math.PI * MOBILE_AMP_Y;
-      const normBeta = (beta - 45) / 90;
+      // Ограничиваем нормированные значения, но даём больше свободы за счёт высоких множителей
+      const normGamma = Math.max(-1, Math.min(1, gamma / 90));
+      const normBeta = Math.max(-1, Math.min(1, (beta - 45) / 90));
+
+      rotateYRef.current = baseRotationY + normGamma * Math.PI * MOBILE_AMP_Y;
       const verticalLimit = normBeta >= 0 ? MAX_VERTICAL_UP : MAX_VERTICAL_DOWN;
-      rotateXRef.current = Math.max(-1, Math.min(1, normBeta)) * verticalLimit;
+      rotateXRef.current = normBeta * verticalLimit;
     };
     if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
       DeviceOrientationEvent.requestPermission().then(permission => {
@@ -92,7 +110,7 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
       window.addEventListener('deviceorientation', handleOrientation);
     }
     return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, [isGyroActive]);
+  }, [isGyroActive, baseRotationY]);
 
   // Глобальное слежение за мышью + индивидуальная подсветка
   useEffect(() => {
@@ -123,7 +141,7 @@ export default function Card3D({ glbPath, label, baseRotationY = 0, className = 
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseleave', handleGlobalMouseLeave);
     };
-  }, []);
+  }, [baseRotationY]);
 
   // Тач (если гироскоп не активен)
   const handleTouchMove = (e) => {
