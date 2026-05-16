@@ -65,7 +65,7 @@ export default function Card3D({ glbPath, label, className = '', isGyroActive = 
   const [modelLoaded, setModelLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const cardRef = useRef(null);
-  const rotateXRef = useRef(0.15 * Math.PI);
+  const rotateXRef = useRef(-0.15 * Math.PI);
   const rotateYRef = useRef(0);
   const hoverRef = useRef(false);
 
