@@ -39,6 +39,7 @@ export default function HomePage() {
   const playClick = useClickSound();
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
   const [shadowOpacity, setShadowOpacity] = useState(0);
+  const [modelReady, setModelReady] = useState(false);
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -64,6 +65,14 @@ export default function HomePage() {
     }, 16);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+  const loader = new GLTFLoader();
+  loader.load(`${BASE_URL}icon_card.glb`, () => {
+    console.log('3D-модель готова');
+    setModelReady(true);
+  });
+}, []);
 
   // Тени появляются сразу после прелоадера, ещё до персонажа
   useEffect(() => {
