@@ -5,9 +5,8 @@ import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
 import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
-import { MessageCircle, FolderGit2, PenTool, Smartphone } from "lucide-react";
+import { MessageCircle, Smartphone } from "lucide-react";
 import Card3D from "../components/Card3D";
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -24,22 +23,20 @@ export default function HomePage() {
   const [dialogueIndex, setDialogueIndex] = useState(0);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
-
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [preloaderVisible, setPreloaderVisible] = useState(true);
   const [personaOpacity, setPersonaOpacity] = useState(0);
   const [allowDialogue, setAllowDialogue] = useState(false);
-
   const [originalShown, setOriginalShown] = useState(false);
   const [personaOriginalsReady, setPersonaOriginalsReady] = useState(false);
-
   const containerRef = useRef(null);
   const touchStartY = useRef(0);
   const playClick = useClickSound();
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
   const [shadowOpacity, setShadowOpacity] = useState(0);
-  const [modelReady, setModelReady] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -50,7 +47,7 @@ export default function HomePage() {
     }
   };
 
-  // 1. Прелоадер (2.8 секунды)
+  // Прелоадер (2.8 секунды)
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
@@ -66,15 +63,7 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-  const loader = new GLTFLoader();
-  loader.load(`${BASE_URL}icon_card.glb`, () => {
-    console.log('3D-модель готова');
-    setModelReady(true);
-  });
-}, []);
-
-  // Тени появляются сразу после прелоадера, ещё до персонажа
+  // Тени появляются сразу после прелоадера
   useEffect(() => {
     if (preloaderVisible) return;
     const start = Date.now();
@@ -87,7 +76,7 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [preloaderVisible]);
 
-  // 2. Появление персонажа (0.6 с после прелоадера)
+  // Появление персонажа
   useEffect(() => {
     if (preloaderVisible) return;
     const startTime = Date.now();
@@ -101,58 +90,37 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [preloaderVisible]);
 
-  // 3. Разрешить диалог (3.5 с)
+  // Разрешить диалог
   useEffect(() => {
     const delay = setTimeout(() => setAllowDialogue(true), 3500);
     return () => clearTimeout(delay);
   }, []);
 
-  // 4. Загрузка оригиналов (фон + персонажи)
+  // Загрузка оригиналов (фон + персонажи)
   useEffect(() => {
-    console.log('⏳ Загружаем оригиналы...');
-
     const bg = new Image();
     bg.src = `${BASE_URL}images/portfolio_background.png`;
-    bg.onload = () => {
-      console.log('✅ Оригинал фона загружен');
-      setTimeout(() => setOriginalShown(true), 100);
-    };
+    bg.onload = () => setTimeout(() => setOriginalShown(true), 100);
     bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
 
     let personaLoadedCount = 0;
     const onPersonaLoad = () => {
       personaLoadedCount++;
-      if (personaLoadedCount === 2) {
-        console.log('✅ Оригиналы персонажа загружены');
-        setPersonaOriginalsReady(true);
-      }
+      if (personaLoadedCount === 2) setPersonaOriginalsReady(true);
     };
-
     const right = new Image();
     right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
     right.onload = onPersonaLoad;
     right.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
-
     const left = new Image();
     left.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
     left.onload = onPersonaLoad;
     left.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
-
-    // Тени загружаются в фоне
     new Image().src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
 
-    // Предзагрузка 3D-модели для карточек
-    useEffect(() => {
-      const loader = new GLTFLoader();
-      // Загружаем модель и кэшируем её (Three.js кэширует автоматически по URL)
-      loader.load(`${BASE_URL}icon_card.glb`, (gltf) => {
-        console.log('3D-модель предзагружена');
-      });
-    }, []);
-
-  // Разворот персонажа на десктопе по положению курсора
+  // Разворот персонажа на десктопе
   useEffect(() => {
     if (isMobile) return;
     const handleMouseMove = (e) => {
@@ -168,7 +136,6 @@ export default function HomePage() {
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
-
   const handleTouchEnd = useCallback(
     (e) => {
       const deltaY = touchStartY.current - e.changedTouches[0].clientY;
@@ -192,7 +159,6 @@ export default function HomePage() {
     },
     [dialogueIndex, showInterface, playClick, allowDialogue]
   );
-
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -210,28 +176,22 @@ export default function HomePage() {
     layer2: { x: 0, y: 0 },
     layer3: { x: 0, y: 0 },
   });
-
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
   useEffect(() => {
     if (!isMobile || !gyroPermissionGranted) return;
-    let cleanup = () => {};
-
     const handleOrientation = (event) => {
       const gamma = event.gamma || 0;
       const beta = event.beta || 0;
       const normGamma = gamma / 90;
       const normBeta = beta / 180;
-
       if (gamma > 25) setActiveImage("right");
       else if (gamma < -25) setActiveImage("left");
-
       setGyroOffsets({
-        layer1: { x: normGamma * 20, y: normBeta * 6 },  // уменьшено для мобильных
+        layer1: { x: normGamma * 20, y: normBeta * 6 },
         layer2: {
           x: Math.max(-15, Math.min(15, -normGamma * 70 * 0.02)),
           y: Math.max(-15, Math.min(15, -normBeta * 70 * 0.02)),
@@ -239,10 +199,8 @@ export default function HomePage() {
         layer3: { x: normGamma * 80, y: normBeta * 120 },
       });
     };
-
     window.addEventListener("deviceorientation", handleOrientation);
-    cleanup = () => window.removeEventListener("deviceorientation", handleOrientation);
-    return cleanup;
+    return () => window.removeEventListener("deviceorientation", handleOrientation);
   }, [isMobile, gyroPermissionGranted]);
 
   const nextDialogue = () => {
@@ -254,12 +212,19 @@ export default function HomePage() {
       setShowInterface(true);
     }
   };
-
   const handleTreatsClick = () => {
     if (!allowDialogue) return;
     playClick();
     setDialogueIndex(prev => prev + 1);
   };
+
+  // Автопереход к интерфейсу
+  useEffect(() => {
+    if (dialogueIndex === 3 && allowDialogue) {
+      const timer = setTimeout(() => nextDialogue(), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [dialogueIndex, allowDialogue]);
 
   // Параллакс
   const backgroundOffset = {
@@ -270,8 +235,37 @@ export default function HomePage() {
     x: -backgroundOffset.x * 0.15,
     y: -backgroundOffset.y * 0.1,
   };
-
   const personaScale = isMobile ? 1.0 : 1.2;
+
+  const handleCardClick = (type) => {
+    if (isMobile) {
+      if (selectedCard === type) {
+        closeCard();
+      } else if (hoveredCard === type) {
+        setSelectedCard(type);
+        setHoveredCard(null);
+      } else {
+        setHoveredCard(type);
+      }
+    } else {
+      if (selectedCard === type) {
+        closeCard();
+      } else {
+        setSelectedCard(type);
+      }
+    }
+  };
+
+  const closeCard = () => {
+    setSelectedCard(null);
+    setHoveredCard(null);
+  };
+
+  const sceneOffsetX = selectedCard === 'projects'
+    ? (isMobile ? '60%' : '30%')
+    : selectedCard === 'blog'
+    ? (isMobile ? '-60%' : '-30%')
+    : '0%';
 
   return (
     <div
@@ -289,33 +283,6 @@ export default function HomePage() {
           <Smartphone className="w-5 h-5" />
         </button>
       )}
-
-      {/* Слой 0: фон с расширенными границами */}
-      <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "130vw", height: "130vh", left: "-15vw", top: "-15vh" }}>
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${BASE_URL}images/compress/portfolio_background.png)`,
-            opacity: originalShown ? 0 : 1,
-          }}
-        />
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-          style={{
-            backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
-            opacity: originalShown ? 1 : 0,
-          }}
-        />
-      </ParallaxLayer>
-
-      {/* Постоянное затемнение (виньетка) */}
-      <div
-        className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
-        style={{
-          background: "radial-gradient(ellipse at center, rgba(0,0,0,0.2) 20%, rgba(0,0,0,1) 100%)",
-          opacity: 0.6,
-        }}
-      />
 
       {/* Прелоадер */}
       {preloaderVisible && (
@@ -336,37 +303,63 @@ export default function HomePage() {
         </motion.div>
       )}
 
-      {/* Слой теней (между фоном и персонажем) */}
-      <ParallaxLayer
-        offset={personaOffset}
-        className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
-        style={{ opacity: shadowOpacity, transition: 'opacity 0.7s ease-in-out' }}
+      {/* Смещение сцены */}
+      <motion.div
+        className="absolute inset-0 z-0"
+        animate={{ x: sceneOffsetX }}
+        transition={{ type: 'spring', stiffness: 100, damping: 20 }}
       >
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
-          alt="Shadow right"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-[57%]"
+        <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "130vw", height: "130vh", left: "-15vw", top: "-15vh" }}>
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+            style={{
+              backgroundImage: `url(${BASE_URL}images/compress/portfolio_background.png)`,
+              opacity: originalShown ? 0 : 1,
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+            style={{
+              backgroundImage: `url(${BASE_URL}images/portfolio_background.png)`,
+              opacity: originalShown ? 1 : 0,
+            }}
+          />
+        </ParallaxLayer>
+        <div
+          className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
           style={{
-            opacity: activeImage === "right" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-            transition: 'opacity 0.7s ease-in-out',
+            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.2) 20%, rgba(0,0,0,1) 100%)",
+            opacity: 0.6,
           }}
         />
-        <motion.img
-          src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
-          alt="Shadow left"
-          className="object-contain absolute bottom-0 left-1/2 -translate-x-[57%]"
-          style={{
-            opacity: activeImage === "left" ? 1 : 0,
-            maxWidth: "none",
-            maxHeight: `${personaScale * 100}vh`,
-            transition: 'opacity 0.7s ease-in-out',
-          }}
-        />
-      </ParallaxLayer>
-
-      {/* Единственный слой персонажа (без лишнего cursor-pointer) */}
+        <ParallaxLayer
+          offset={personaOffset}
+          className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
+          style={{ opacity: shadowOpacity, transition: 'opacity 0.7s ease-in-out' }}
+        >
+          <motion.img
+            src={`${BASE_URL}images/portfolio_ramzez_right_shadow.png`}
+            alt="Shadow right"
+            className="object-contain absolute bottom-0 left-1/2 -translate-x-[57%]"
+            style={{
+              opacity: activeImage === "right" ? 1 : 0,
+              maxWidth: "none",
+              maxHeight: `${personaScale * 100}vh`,
+              transition: 'opacity 0.7s ease-in-out',
+            }}
+          />
+          <motion.img
+            src={`${BASE_URL}images/portfolio_ramzez_left_shadow.png`}
+            alt="Shadow left"
+            className="object-contain absolute bottom-0 left-1/2 -translate-x-[57%]"
+            style={{
+              opacity: activeImage === "left" ? 1 : 0,
+              maxWidth: "none",
+              maxHeight: `${personaScale * 100}vh`,
+              transition: 'opacity 0.7s ease-in-out',
+            }}
+          />
+        </ParallaxLayer>
         <ParallaxLayer
           offset={personaOffset}
           className="absolute inset-0 z-10 flex items-end justify-center"
@@ -405,8 +398,9 @@ export default function HomePage() {
             onClick={nextDialogue}
           />
         </ParallaxLayer>
+      </motion.div>
 
-      {/* Статичный слой для облаков и картинок */}
+      {/* Статичный слой */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
@@ -458,47 +452,92 @@ export default function HomePage() {
                 </GlassCard>
               </motion.div>
             )}
+
             {showInterface && (
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  className="pointer-events-none absolute inset-0 z-20"
->
-  <div
-    className="pointer-events-auto absolute"
-    style={{
-      left: isMobile ? '-3%' : '25%',   // мобилки: ближе к центру, десктоп: выходит за край
-      bottom: isMobile ? '40%' : '50%', // мобилки: выше, десктоп: ниже
-    }}
-  >
-    <Card3D
-      key="card-projects"
-      glbPath={`${BASE_URL}icon_card.glb`}
-      label="Проекты"
-      baseRotationY={0.3}  // смотрит вправо
-      isGyroActive={gyroPermissionGranted}
-    />
-  </div>
-  <div
-    className="pointer-events-auto absolute"
-    style={{
-      right: isMobile ? '-3%' : '25%',
-      bottom: isMobile ? '40%' : '50%',
-    }}
-  >
-    <Card3D
-      key="card-blog"
-      glbPath={`${BASE_URL}icon_card.glb`}
-      label="Блог"
-      baseRotationY={-0.3} // смотрит влево
-      isGyroActive={gyroPermissionGranted}
-    />
-  </div>
-</motion.div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-none absolute inset-0 z-20">
+                {/* Левая карточка (Проекты) */}
+                <div
+                  className="pointer-events-auto absolute"
+                  style={{
+                    left: isMobile ? '-3%' : '25%',
+                    bottom: isMobile ? '40%' : '50%',
+                    opacity: selectedCard === 'blog' ? 0 : 1,
+                    transition: 'opacity 0.5s',
+                  }}
+                >
+                  <Card3D
+                    activeWidth="13500px"
+                    activeHeight="1350px"
+                    glbPath={`${BASE_URL}icon_card.glb`}
+                    activeGlbPath={`${BASE_URL}icon_card_wide.glb`}
+                    activeModelScale={0.8}
+                    label="Проекты"
+                    baseRotationY={0.3}
+                    isGyroActive={gyroPermissionGranted}
+                    active={selectedCard === 'projects'}
+                    mobileActive={hoveredCard === 'projects'}
+                    onClick={() => handleCardClick('projects')}
+                    onClose={closeCard}
+                    mobileActiveWidth="90vw"
+                    mobileActiveHeight="90vh"
+                  >
+                    {selectedCard === 'projects' && (
+                      <div className="text-white text-center bg-black/40 backdrop-blur-md rounded-3xl p-8">
+                        <h3 className="text-3xl font-bold mb-4">Мои проекты</h3>
+                        <p className="text-gray-300">Список проектов появится здесь.</p>
+                      </div>
+                    )}
+                  </Card3D>
+                </div>
+
+                {/* Правая карточка (Блог) */}
+                <div
+                  className="pointer-events-auto absolute"
+                  style={{
+                    right: isMobile ? '-3%' : '25%',
+                    bottom: isMobile ? '40%' : '50%',
+                    opacity: selectedCard === 'projects' ? 0 : 1,
+                    transition: 'opacity 0.5s',
+                  }}
+                >
+                  <Card3D
+                    activeWidth="13500px"
+                    activeHeight="1350px"
+                    glbPath={`${BASE_URL}icon_card.glb`}
+                    activeGlbPath={`${BASE_URL}icon_card_wide.glb`}
+                    activeModelScale={0.8}
+                    label="Блог"
+                    baseRotationY={-0.3}
+                    isGyroActive={gyroPermissionGranted}
+                    active={selectedCard === 'blog'}
+                    mobileActive={hoveredCard === 'blog'}
+                    onClick={() => handleCardClick('blog')}
+                    onClose={closeCard}
+                    mobileActiveWidth="90vw"
+                    mobileActiveHeight="90vh"
+                  >
+                    {selectedCard === 'blog' && (
+                      <div className="text-white text-center bg-black/40 backdrop-blur-md rounded-3xl p-4" style={{ width: '100%', maxWidth: '560px' }}>
+                        <iframe
+                          width="560"
+                          height="315"
+                          src="https://www.youtube.com/embed/AAWOlIvJIUE?si=sk3pt2D4lQ-BSZi4"
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allowFullScreen
+                          style={{ maxWidth: '100%', borderRadius: '1rem' }}
+                        />
+                      </div>
+                    )}
+                  </Card3D>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Картинки чая и чак-чака (только при dialogueIndex === 2) */}
+          {/* Чай и чак-чак */}
           <AnimatePresence>
             {dialogueIndex === 2 && allowDialogue && !showInterface && (
               <motion.div
