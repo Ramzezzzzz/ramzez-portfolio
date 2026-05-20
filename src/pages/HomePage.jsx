@@ -7,6 +7,7 @@ import { useMouseParallax } from "../hooks/useMouseParallax";
 import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, Smartphone } from "lucide-react";
 import Card3D from "../components/Card3D";
+import GlowingPanel from "../components/GlowingPanel";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -35,8 +36,12 @@ export default function HomePage() {
   const playClick = useClickSound();
   const [gyroPermissionGranted, setGyroPermissionGranted] = useState(false);
   const [shadowOpacity, setShadowOpacity] = useState(0);
+
   const [selectedCard, setSelectedCard] = useState(null);
-  const [hoveredCard, setHoveredCard] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [originRect, setOriginRect] = useState(null);
+  const [hideLeftCard, setHideLeftCard] = useState(false);
+  const [hideRightCard, setHideRightCard] = useState(false);
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -47,7 +52,7 @@ export default function HomePage() {
     }
   };
 
-  // Прелоадер (2.8 секунды)
+  // Прелоадер
   useEffect(() => {
     const startTime = Date.now();
     const timer = setInterval(() => {
@@ -63,7 +68,6 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Тени появляются сразу после прелоадера
   useEffect(() => {
     if (preloaderVisible) return;
     const start = Date.now();
@@ -76,7 +80,6 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [preloaderVisible]);
 
-  // Появление персонажа
   useEffect(() => {
     if (preloaderVisible) return;
     const startTime = Date.now();
@@ -90,19 +93,15 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [preloaderVisible]);
 
-  // Разрешить диалог
   useEffect(() => {
     const delay = setTimeout(() => setAllowDialogue(true), 3500);
     return () => clearTimeout(delay);
   }, []);
 
-  // Загрузка оригиналов (фон + персонажи)
   useEffect(() => {
     const bg = new Image();
     bg.src = `${BASE_URL}images/portfolio_background.png`;
     bg.onload = () => setTimeout(() => setOriginalShown(true), 100);
-    bg.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала фона');
-
     let personaLoadedCount = 0;
     const onPersonaLoad = () => {
       personaLoadedCount++;
@@ -111,16 +110,13 @@ export default function HomePage() {
     const right = new Image();
     right.src = `${BASE_URL}images/portfolio_ramzez_right.png`;
     right.onload = onPersonaLoad;
-    right.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (право)');
     const left = new Image();
     left.src = `${BASE_URL}images/portfolio_ramzez_left.png`;
     left.onload = onPersonaLoad;
-    left.onerror = () => console.warn('⚠️ Ошибка загрузки оригинала персонажа (лево)');
     new Image().src = `${BASE_URL}images/portfolio_ramzez_right_shadow.png`;
     new Image().src = `${BASE_URL}images/portfolio_ramzez_left_shadow.png`;
   }, []);
 
-  // Разворот персонажа на десктопе
   useEffect(() => {
     if (isMobile) return;
     const handleMouseMove = (e) => {
@@ -132,7 +128,6 @@ export default function HomePage() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [isMobile]);
 
-  // Свайпы
   const handleTouchStart = useCallback((e) => {
     touchStartY.current = e.touches[0].clientY;
   }, []);
@@ -170,7 +165,6 @@ export default function HomePage() {
     };
   }, [handleTouchStart, handleTouchEnd]);
 
-  // Гироскоп
   const [gyroOffsets, setGyroOffsets] = useState({
     layer1: { x: 0, y: 0 },
     layer2: { x: 0, y: 0 },
@@ -206,11 +200,8 @@ export default function HomePage() {
   const nextDialogue = () => {
     if (!allowDialogue) return;
     playClick();
-    if (dialogueIndex < dialogues.length - 1) {
-      setDialogueIndex(prev => prev + 1);
-    } else {
-      setShowInterface(true);
-    }
+    if (dialogueIndex < dialogues.length - 1) setDialogueIndex(prev => prev + 1);
+    else setShowInterface(true);
   };
   const handleTreatsClick = () => {
     if (!allowDialogue) return;
@@ -218,7 +209,6 @@ export default function HomePage() {
     setDialogueIndex(prev => prev + 1);
   };
 
-  // Автопереход к интерфейсу
   useEffect(() => {
     if (dialogueIndex === 3 && allowDialogue) {
       const timer = setTimeout(() => nextDialogue(), 1000);
@@ -226,7 +216,6 @@ export default function HomePage() {
     }
   }, [dialogueIndex, allowDialogue]);
 
-  // Параллакс
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.0,
     y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.4,
@@ -237,35 +226,29 @@ export default function HomePage() {
   };
   const personaScale = isMobile ? 1.0 : 1.2;
 
-  const handleCardClick = (type) => {
-    if (isMobile) {
-      if (selectedCard === type) {
-        closeCard();
-      } else if (hoveredCard === type) {
-        setSelectedCard(type);
-        setHoveredCard(null);
-      } else {
-        setHoveredCard(type);
-      }
-    } else {
-      if (selectedCard === type) {
-        closeCard();
-      } else {
-        setSelectedCard(type);
-      }
-    }
+  const handleCardClick = (type, rect) => {
+    setOriginRect(rect);
+    setSelectedCard(type);
+    setPanelOpen(true);
+    if (type === 'projects') setHideLeftCard(true);
+    if (type === 'blog') setHideRightCard(true);
   };
 
-  const closeCard = () => {
+  const closePanel = () => {
+    setPanelOpen(false);
     setSelectedCard(null);
-    setHoveredCard(null);
+    setOriginRect(null);
+    setHideLeftCard(false);
+    setHideRightCard(false);
   };
 
   const sceneOffsetX = selectedCard === 'projects'
-    ? (isMobile ? '60%' : '30%')
+    ? (isMobile ? '40%' : '20%')
     : selectedCard === 'blog'
-    ? (isMobile ? '-60%' : '-30%')
+    ? (isMobile ? '-40%' : '-20%')
     : '0%';
+
+  const panelPosition = selectedCard === 'projects' ? 'right' : selectedCard === 'blog' ? 'left' : 'center';
 
   return (
     <div
@@ -278,13 +261,11 @@ export default function HomePage() {
         <button
           onClick={requestGyroPermission}
           className="fixed top-14 right-4 z-50 p-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all"
-          aria-label="Активировать движение"
         >
           <Smartphone className="w-5 h-5" />
         </button>
       )}
 
-      {/* Прелоадер */}
       {preloaderVisible && (
         <motion.div
           className="absolute inset-0 z-30 bg-black flex flex-col items-center justify-center pointer-events-none"
@@ -303,13 +284,23 @@ export default function HomePage() {
         </motion.div>
       )}
 
-      {/* Смещение сцены */}
+        {/* ВИНЬЕТКА – чёрная, тестовая. Потом сделаете прозрачнее */}
+        <div
+          className="fixed inset-0 pointer-events-none"
+          style={{
+            background: "radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.95) 100%)",
+            zIndex: 15,
+          }}
+        />
+
+      {/* СЦЕНА (смещается) */}
       <motion.div
         className="absolute inset-0 z-0"
         animate={{ x: sceneOffsetX }}
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
       >
-        <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "130vw", height: "130vh", left: "-15vw", top: "-15vh" }}>
+        {/* Фоновое изображение – растянуто на 130%, чтобы не было краёв при смещении */}
+        <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "145vw", height: "145vh", left: "-22.5vw", top: "-15vh" }}>
           <div
             className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
             style={{
@@ -325,13 +316,8 @@ export default function HomePage() {
             }}
           />
         </ParallaxLayer>
-        <div
-          className="absolute inset-0 z-5 pointer-events-none dark-gradient-fix"
-          style={{
-            background: "radial-gradient(ellipse at center, rgba(0,0,0,0.2) 20%, rgba(0,0,0,1) 100%)",
-            opacity: 0.6,
-          }}
-        />
+
+        {/* Тени персонажа */}
         <ParallaxLayer
           offset={personaOffset}
           className="absolute inset-0 z-8 flex items-end justify-center pointer-events-none"
@@ -360,6 +346,8 @@ export default function HomePage() {
             }}
           />
         </ParallaxLayer>
+
+        {/* Персонаж */}
         <ParallaxLayer
           offset={personaOffset}
           className="absolute inset-0 z-10 flex items-end justify-center"
@@ -398,22 +386,54 @@ export default function HomePage() {
             onClick={nextDialogue}
           />
         </ParallaxLayer>
+
+        {/* Карточки (они смещаются вместе со сценой) */}
+        {showInterface && (
+          <div className="absolute inset-0 z-20 pointer-events-none">
+            <div
+              className="pointer-events-auto absolute"
+              style={{
+                left: isMobile ? '-3%' : '25%',
+                bottom: isMobile ? '40%' : '50%',
+                transform: 'translateY(50%)',
+              }}
+            >
+              <Card3D
+                glbPath={`${BASE_URL}icon_card.glb`}
+                label="Проекты"
+                baseRotationY={0.3}
+                isGyroActive={gyroPermissionGranted}
+                onClick={(rect) => handleCardClick('projects', rect)}
+                hidden={hideLeftCard}
+              />
+            </div>
+            <div
+              className="pointer-events-auto absolute"
+              style={{
+                right: isMobile ? '-3%' : '25%',
+                bottom: isMobile ? '40%' : '50%',
+                transform: 'translateY(50%)',
+              }}
+            >
+              <Card3D
+                glbPath={`${BASE_URL}icon_card.glb`}
+                label="Блог"
+                baseRotationY={-0.3}
+                isGyroActive={gyroPermissionGranted}
+                onClick={(rect) => handleCardClick('blog', rect)}
+                hidden={hideRightCard}
+              />
+            </div>
+          </div>
+        )}
       </motion.div>
 
-      {/* Статичный слой */}
+      {/* UI слой (диалоги, чай) – не смещается, выше виньетки */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
             {!showInterface && allowDialogue && dialogueIndex === 0 && (
-              <motion.div
-                key="dialogue-0"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
-                onClick={nextDialogue}
-              >
+              <motion.div key="dialogue-0" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }} className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md" onClick={nextDialogue}>
                 <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
                   <p className="text-white text-base sm:text-lg font-medium">{dialogues[0]}</p>
@@ -421,15 +441,7 @@ export default function HomePage() {
               </motion.div>
             )}
             {!showInterface && allowDialogue && dialogueIndex === 1 && (
-              <motion.div
-                key="dialogue-1"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
-                onClick={nextDialogue}
-              >
+              <motion.div key="dialogue-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }} className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md" onClick={nextDialogue}>
                 <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
                   <p className="text-white text-base sm:text-lg font-medium">{dialogues[1]}</p>
@@ -437,174 +449,65 @@ export default function HomePage() {
               </motion.div>
             )}
             {!showInterface && allowDialogue && dialogueIndex >= 3 && (
-              <motion.div
-                key={`dialogue-${dialogueIndex}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
-                onClick={nextDialogue}
-              >
+              <motion.div key={`dialogue-${dialogueIndex}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }} className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md" onClick={nextDialogue}>
                 <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
                   <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
                   <p className="text-white text-base sm:text-lg font-medium">{dialogues[dialogueIndex]}</p>
                 </GlassCard>
               </motion.div>
             )}
-
-            {showInterface && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pointer-events-none absolute inset-0 z-20">
-                {/* Левая карточка (Проекты) */}
-                <div
-                  className="pointer-events-auto absolute"
-                  style={{
-                    left: isMobile ? '-3%' : '25%',
-                    bottom: isMobile ? '40%' : '50%',
-                    opacity: selectedCard === 'blog' ? 0 : 1,
-                    transition: 'opacity 0.5s',
-                  }}
-                >
-                  <Card3D
-                    activeWidth="13500px"
-                    activeHeight="1350px"
-                    glbPath={`${BASE_URL}icon_card.glb`}
-                    activeGlbPath={`${BASE_URL}icon_card_wide.glb`}
-                    activeModelScale={0.8}
-                    label="Проекты"
-                    baseRotationY={0.3}
-                    isGyroActive={gyroPermissionGranted}
-                    active={selectedCard === 'projects'}
-                    mobileActive={hoveredCard === 'projects'}
-                    onClick={() => handleCardClick('projects')}
-                    onClose={closeCard}
-                    mobileActiveWidth="90vw"
-                    mobileActiveHeight="90vh"
-                  >
-                    {selectedCard === 'projects' && (
-                      <div className="text-white text-center bg-black/40 backdrop-blur-md rounded-3xl p-8">
-                        <h3 className="text-3xl font-bold mb-4">Мои проекты</h3>
-                        <p className="text-gray-300">Список проектов появится здесь.</p>
-                      </div>
-                    )}
-                  </Card3D>
-                </div>
-
-                {/* Правая карточка (Блог) */}
-                <div
-                  className="pointer-events-auto absolute"
-                  style={{
-                    right: isMobile ? '-3%' : '25%',
-                    bottom: isMobile ? '40%' : '50%',
-                    opacity: selectedCard === 'projects' ? 0 : 1,
-                    transition: 'opacity 0.5s',
-                  }}
-                >
-                  <Card3D
-                    activeWidth="13500px"
-                    activeHeight="1350px"
-                    glbPath={`${BASE_URL}icon_card.glb`}
-                    activeGlbPath={`${BASE_URL}icon_card_wide.glb`}
-                    activeModelScale={0.8}
-                    label="Блог"
-                    baseRotationY={-0.3}
-                    isGyroActive={gyroPermissionGranted}
-                    active={selectedCard === 'blog'}
-                    mobileActive={hoveredCard === 'blog'}
-                    onClick={() => handleCardClick('blog')}
-                    onClose={closeCard}
-                    mobileActiveWidth="90vw"
-                    mobileActiveHeight="90vh"
-                  >
-                    {selectedCard === 'blog' && (
-                      <div className="text-white text-center bg-black/40 backdrop-blur-md rounded-3xl p-4" style={{ width: '100%', maxWidth: '560px' }}>
-                        <iframe
-                          width="560"
-                          height="315"
-                          src="https://www.youtube.com/embed/AAWOlIvJIUE?si=sk3pt2D4lQ-BSZi4"
-                          title="YouTube video player"
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          allowFullScreen
-                          style={{ maxWidth: '100%', borderRadius: '1rem' }}
-                        />
-                      </div>
-                    )}
-                  </Card3D>
-                </div>
-              </motion.div>
-            )}
           </AnimatePresence>
 
-          {/* Чай и чак-чак */}
           <AnimatePresence>
             {dialogueIndex === 2 && allowDialogue && !showInterface && (
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-              >
-                <motion.div
-                  className="absolute pointer-events-auto cursor-pointer"
-                  style={{
-                    left: isMobile ? '10%' : '25%',
-                    bottom: '40%',
-                    width: '110px',
-                    height: '110px',
-                  }}
-                  onClick={handleTreatsClick}
-                  variants={{
-                    hidden: { opacity: 0, x: -30 },
-                    visible: { opacity: 1, x: 0 },
-                    exit: { opacity: 0, x: -30, transition: { duration: 0.5 } },
-                  }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                >
-                  <motion.img
-                    src={`${BASE_URL}images/tea.png`}
-                    alt="Чай"
-                    className="w-full h-full object-contain"
-                    style={{
-                      filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8)) drop-shadow(0 0 8px rgba(255,80,80,0.4))',
-                    }}
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                  />
+              <motion.div className="absolute inset-0 pointer-events-none" initial="hidden" animate="visible" exit="exit">
+                <motion.div className="absolute pointer-events-auto cursor-pointer" style={{ left: isMobile ? '10%' : '25%', bottom: '40%', width: '110px', height: '110px' }} onClick={handleTreatsClick} variants={{ hidden: { opacity: 0, x: -30 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -30 } }} transition={{ duration: 0.8 }}>
+                  <motion.img src={`${BASE_URL}images/tea.png`} alt="Чай" className="w-full h-full object-contain" style={{ filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8))' }} animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} />
                 </motion.div>
-                <motion.div
-                  className="absolute pointer-events-auto cursor-pointer"
-                  style={{
-                    right: isMobile ? '10%' : '25%',
-                    bottom: '40%',
-                    width: '110px',
-                    height: '110px',
-                  }}
-                  onClick={handleTreatsClick}
-                  variants={{
-                    hidden: { opacity: 0, x: 30 },
-                    visible: { opacity: 1, x: 0 },
-                    exit: { opacity: 0, x: 30, transition: { duration: 0.5 } },
-                  }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                >
-                  <motion.img
-                    src={`${BASE_URL}images/chakchak.png`}
-                    alt="Чак-чак"
-                    className="w-full h-full object-contain"
-                    style={{
-                      filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8)) drop-shadow(0 0 8px rgba(255,80,80,0.4))',
-                    }}
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                  />
+                <motion.div className="absolute pointer-events-auto cursor-pointer" style={{ right: isMobile ? '10%' : '25%', bottom: '40%', width: '110px', height: '110px' }} onClick={handleTreatsClick} variants={{ hidden: { opacity: 0, x: 30 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: 30 } }} transition={{ duration: 0.8 }}>
+                  <motion.img src={`${BASE_URL}images/chakchak.png`} alt="Чак-чак" className="w-full h-full object-contain" style={{ filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8))' }} animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} />
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </div>
+
+        <GlowingPanel 
+              isOpen={panelOpen && selectedCard === 'projects'} 
+              onClose={closePanel}
+              customPosition={{ top: '5%', left: '170px' }}
+            >
+          {selectedCard === 'projects' && (
+            <div className="text-center">
+              <h3 className="text-3xl font-bold mb-4">Мои проекты</h3>
+              <p className="text-gray-300">Список проектов появится здесь.</p>
+            </div>
+          )}
+          {selectedCard === 'blog' && (
+            <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto' }}>
+              <iframe width="560" height="315" src="https://www.youtube.com/embed/AAWOlIvJIUE" title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', borderRadius: '1rem' }} />
+            </div>
+          )}
+        </GlowingPanel>       
+
+            <GlowingPanel 
+              isOpen={panelOpen && selectedCard === 'blog'} 
+              onClose={closePanel}
+              customPosition={{ top: '5%', right: '170px' }}
+            >
+          {selectedCard === 'projects' && (
+            <div className="text-center">
+              <h3 className="text-3xl font-bold mb-4">Мои проекты</h3>
+              <p className="text-gray-300">Список проектов появится здесь.</p>
+            </div>
+          )}
+          {selectedCard === 'blog' && (
+            <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto' }}>
+              <iframe width="560" height="315" src="https://www.youtube.com/embed/AAWOlIvJIUE" title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', borderRadius: '1rem' }} />
+            </div>
+          )}
+        </GlowingPanel>
     </div>
   );
 }
