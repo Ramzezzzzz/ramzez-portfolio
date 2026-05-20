@@ -8,6 +8,7 @@ import { useClickSound } from "../hooks/useClickSound";
 import { MessageCircle, Smartphone } from "lucide-react";
 import Card3D from "../components/Card3D";
 import GlowingPanel from "../components/GlowingPanel";
+import ProjectsPanel from "../components/ProjectsPanel";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -473,41 +474,34 @@ export default function HomePage() {
         </div>
       </div>
 
-        <GlowingPanel 
-              isOpen={panelOpen && selectedCard === 'projects'} 
-              onClose={closePanel}
-              customPosition={{ top: '5%', left: '170px' }}
-            >
-          {selectedCard === 'projects' && (
-            <div className="text-center">
-              <h3 className="text-3xl font-bold mb-4">Мои проекты</h3>
-              <p className="text-gray-300">Список проектов появится здесь.</p>
-            </div>
-          )}
-          {selectedCard === 'blog' && (
-            <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto' }}>
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/AAWOlIvJIUE" title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', borderRadius: '1rem' }} />
-            </div>
-          )}
-        </GlowingPanel>       
+{/* Панель ПРОЕКТОВ (левая) */}
+<GlowingPanel 
+  isOpen={panelOpen && selectedCard === 'projects'} 
+  onClose={closePanel}
+  customPosition={{ top: '5%', left: '170px' }}
+>
+  <ProjectsPanel />
+</GlowingPanel>
 
-            <GlowingPanel 
-              isOpen={panelOpen && selectedCard === 'blog'} 
-              onClose={closePanel}
-              customPosition={{ top: '5%', right: '170px' }}
-            >
-          {selectedCard === 'projects' && (
-            <div className="text-center">
-              <h3 className="text-3xl font-bold mb-4">Мои проекты</h3>
-              <p className="text-gray-300">Список проектов появится здесь.</p>
-            </div>
-          )}
-          {selectedCard === 'blog' && (
-            <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto' }}>
-              <iframe width="560" height="315" src="https://www.youtube.com/embed/AAWOlIvJIUE" title="YouTube" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ width: '100%', borderRadius: '1rem' }} />
-            </div>
-          )}
-        </GlowingPanel>
+{/* Панель БЛОГА (правая) */}
+<GlowingPanel 
+  isOpen={panelOpen && selectedCard === 'blog'} 
+  onClose={closePanel}
+  customPosition={{ top: '5%', right: '170px' }}
+>
+  <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto' }}>
+    <iframe
+      width="560"
+      height="315"
+      src="https://www.youtube.com/embed/AAWOlIvJIUE"
+      title="YouTube"
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      style={{ width: '100%', borderRadius: '1rem' }}
+    />
+  </div>
+</GlowingPanel>
     </div>
   );
 }
