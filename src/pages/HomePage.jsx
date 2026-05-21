@@ -301,7 +301,7 @@ export default function HomePage() {
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
       >
         {/* Фоновое изображение – растянуто на 130%, чтобы не было краёв при смещении */}
-        <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "145vw", height: "145vh", left: "-22.5vw", top: "-15vh" }}>
+        <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "180vw", height: "180vh", left: "-40vw", top: "-15vh" }}>
           <div
             className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
             style={{

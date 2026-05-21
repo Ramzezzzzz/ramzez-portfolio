@@ -22,3 +22,36 @@ html, body {
   opacity: 1.2 !important;
 }
 
+
+/* Для всей панели прокрутки */
+.projects-panel::-webkit-scrollbar,
+.glowing-panel-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.projects-panel::-webkit-scrollbar-track,
+.glowing-panel-content::-webkit-scrollbar-track {
+  background: rgba(20, 20, 30, 0.4);
+  border-radius: 10px;
+}
+
+.projects-panel::-webkit-scrollbar-thumb,
+.glowing-panel-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 80, 120, 0.6);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.projects-panel::-webkit-scrollbar-thumb:hover,
+.glowing-panel-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 80, 120, 0.9);
+  box-shadow: 0 0 5px rgba(255, 80, 120, 0.5);
+}
+
+/* Для Firefox */
+.projects-panel,
+.glowing-panel-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 80, 120, 0.6) rgba(20, 20, 30, 0.4);
+}

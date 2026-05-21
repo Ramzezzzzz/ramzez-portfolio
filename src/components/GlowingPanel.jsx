@@ -116,7 +116,7 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
         >
           <X size={20} />
         </button>
-        <div className="flex-1 overflow-auto p-6 text-white">
+        <div className="flex-1 overflow-auto p-6 text-white glowing-panel-content">
           {children}
         </div>
       </motion.div>
