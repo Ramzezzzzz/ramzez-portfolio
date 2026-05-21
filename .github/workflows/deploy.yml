@@ -36,4 +36,9 @@ jobs:
           port: 21
           local-dir: ./dist/
           server-dir: ${{ secrets.FTP_TARGET_DIR }}
-          dangerous-clean-slate: true
+          delete-removed: false    # НЕ удалять файлы, которых нет в сборке
+          exclude: |               # Явно не трогать эти папки (на всякий случай)
+            /movie/
+            /room/
+            /api/
+            /images/
