@@ -45,19 +45,20 @@ export default function ProjectsPanel() {
         {projects.map((project) => (
           <div
             key={project.id}
-            className="project-card p-5 rounded-2xl transition-all duration-300 cursor-pointer"
+            className={`project-card p-5 rounded-2xl transition-all duration-300 cursor-pointer ${
+              shakingId === project.id ? 'shake' : ''
+            }`}
             onMouseEnter={() => setHoveredId(project.id)}
             onMouseLeave={() => setHoveredId(null)}
             onClick={() => {
-                  if (project.link && project.link !== '#') {
-                    window.open(project.link, '_blank');
-                  } else {
-                    setShakingId(project.id);
-                    setTimeout(() => setShakingId(null), 500);
-                  }
-                }}
+              if (project.link && project.link !== '#') {
+                window.open(project.link, '_blank');
+              } else {
+                setShakingId(project.id);
+                setTimeout(() => setShakingId(null), 500);
+              }
+            }}
             style={{
-              // ⬅️ Восстанавливаем стили из статической версии
               background: 'rgba(20, 20, 30, 0.6)',
               backdropFilter: 'blur(8px)',
               border: '2px solid rgba(255, 80, 120, 0.6)',
@@ -67,10 +68,9 @@ export default function ProjectsPanel() {
               transform: hoveredId === project.id ? 'scale(1.02)' : 'scale(1)',
               minHeight: '200px',
               width: '100%',
-              maxWidth: '960px',   // ← контролируем ширину карточки
+              maxWidth: '960px',
             }}
           >
-            {/* Медиа-блок (опционально) */}
             {project.media_url && (
               <div className="mb-3 rounded-lg overflow-hidden bg-black/30">
                 {project.media_type === 'image' && (
