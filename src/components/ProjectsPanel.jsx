@@ -59,7 +59,7 @@ export default function ProjectsPanel() {
               transform: hoveredId === project.id ? 'scale(1.02)' : 'scale(1)',
               minHeight: '200px',
               width: '100%',
-              maxWidth: '460px',   // ← контролируем ширину карточки
+              maxWidth: '960px',   // ← контролируем ширину карточки
             }}
           >
             {/* Медиа-блок (опционально) */}
