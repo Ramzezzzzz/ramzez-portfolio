@@ -5,6 +5,7 @@ export default function ProjectsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+  const [shakingId, setShakingId] = useState(null);
 
   useEffect(() => {
     fetch('/api/projects.php')
@@ -47,7 +48,14 @@ export default function ProjectsPanel() {
             className="project-card p-5 rounded-2xl transition-all duration-300 cursor-pointer"
             onMouseEnter={() => setHoveredId(project.id)}
             onMouseLeave={() => setHoveredId(null)}
-            onClick={() => window.open(project.link, '_blank')}
+            onClick={() => {
+                  if (project.link && project.link !== '#') {
+                    window.open(project.link, '_blank');
+                  } else {
+                    setShakingId(project.id);
+                    setTimeout(() => setShakingId(null), 500);
+                  }
+                }}
             style={{
               // ⬅️ Восстанавливаем стили из статической версии
               background: 'rgba(20, 20, 30, 0.6)',
