@@ -58,8 +58,8 @@ useEffect(() => {
           document.querySelectorAll('.vk-widget-container').forEach(container => {
             const ownerId = container.getAttribute('data-owner-id');
             const postId = container.getAttribute('data-post-id');
-            if (ownerId && postId && !container.innerHTML.trim()) {
-              window.VK.Widgets.Post(container, ownerId, postId, '');
+            if (ownerId && postId && container.id) {
+              window.VK.Widgets.Post(container.id, ownerId, postId, '');
             }
           });
         }
