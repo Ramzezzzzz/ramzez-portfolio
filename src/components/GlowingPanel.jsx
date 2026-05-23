@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function GlowingPanel({ isOpen, onClose, children, customPosition = null }) {
   const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -15,9 +15,8 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
 
   const isMobile = windowSize.width < 768;
   const panelWidth = isMobile ? '90vw' : 'min(80vw, 1400px)';
-  const panelHeight = isMobile ? '90vh' : 'min(90vh, 900px)';
+  const panelHeight = isMobile ? '85dvh' : 'min(85dvh, 800px)';  // dvh для мобильных
 
-  // Функция для парсинга значений (пиксели или проценты)
   const parseValue = (value, relativeTo) => {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
@@ -27,12 +26,10 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
     return 0;
   };
 
-  // Вычисляем итоговые координаты
   let finalTop, finalLeft, finalRight, finalTransform;
   let isCentered = false;
 
   if (customPosition) {
-    // Пользовательские координаты
     const rawTop = customPosition.top !== undefined ? customPosition.top : '50%';
     const rawLeft = customPosition.left !== undefined ? customPosition.left : null;
     const rawRight = customPosition.right !== undefined ? customPosition.right : null;
@@ -41,21 +38,17 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
     let leftValue = rawLeft !== null ? parseValue(rawLeft, windowSize.width) : null;
     let rightValue = rawRight !== null ? parseValue(rawRight, windowSize.width) : null;
     
-    // Получаем реальную ширину панели в пикселях
     let actualWidth = windowSize.width;
     if (panelWidth.includes('vw')) actualWidth = (parseFloat(panelWidth) / 100) * windowSize.width;
     else if (panelWidth.includes('min')) actualWidth = Math.min((80 / 100) * windowSize.width, 1400);
     
-    // Корректируем left/right, чтобы панель не выходила за края
     if (leftValue !== null) {
-      if (leftValue + actualWidth > windowSize.width - 10)
-        leftValue = windowSize.width - actualWidth - 10;
+      if (leftValue + actualWidth > windowSize.width - 10) leftValue = windowSize.width - actualWidth - 10;
       if (leftValue < 10) leftValue = 10;
       finalLeft = `${leftValue}px`;
       finalRight = 'auto';
     } else if (rightValue !== null) {
-      if (rightValue + actualWidth > windowSize.width - 10)
-        rightValue = windowSize.width - actualWidth - 10;
+      if (rightValue + actualWidth > windowSize.width - 10) rightValue = windowSize.width - actualWidth - 10;
       if (rightValue < 10) rightValue = 10;
       finalRight = `${rightValue}px`;
       finalLeft = 'auto';
@@ -64,7 +57,6 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
     finalTop = `${topValue}px`;
     finalTransform = 'none';
   } else {
-    // По умолчанию – строгий центр
     isCentered = true;
     finalTop = '50%';
     finalLeft = '50%';
@@ -76,7 +68,7 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
     zIndex: 100,
     display: 'flex',
     flexDirection: 'column',
-    overflow: 'auto',
+    overflow: 'hidden',   // важно: скроллится только внутренний блок
     background: 'rgba(20, 20, 30, 0.9)',
     backdropFilter: 'blur(16px)',
     borderRadius: '2rem',
@@ -85,7 +77,7 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
     width: panelWidth,
     height: panelHeight,
     maxWidth: `calc(100vw - 40px)`,
-    maxHeight: `calc(100vh - 40px)`,
+    maxHeight: `calc(100dvh - 40px)`,
     top: finalTop,
     transform: finalTransform,
   };
@@ -97,9 +89,9 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
     if (finalRight !== undefined) finalStyle.right = finalRight;
   }
 
-  const initialStyle = { opacity: 0, scale: 0.8 };
+  const initialStyle = { opacity: 0, scale: 0.9 };
   const animateStyle = { opacity: 1, scale: 1 };
-  const exitStyle = { opacity: 0, scale: 0.8 };
+  const exitStyle = { opacity: 0, scale: 0.9 };
 
   return (
     <AnimatePresence>
@@ -116,7 +108,7 @@ export default function GlowingPanel({ isOpen, onClose, children, customPosition
         >
           <X size={20} />
         </button>
-        <div className="flex-1 overflow-auto p-6 text-white glowing-panel-content">
+        <div className="flex-1 overflow-auto p-6 text-white glowing-panel-content" style={{ maxHeight: '100%' }}>
           {children}
         </div>
       </motion.div>
