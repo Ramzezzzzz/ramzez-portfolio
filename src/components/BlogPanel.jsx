@@ -1,16 +1,23 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 
 export default function BlogPanel() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
+  const vkInitialized = useRef(false);
 
+  // Загрузка постов из API
   useEffect(() => {
     fetch('/api/blog_posts.php')
       .then(res => res.json())
       .then(data => {
-        setPosts(data);
+        if (Array.isArray(data)) {
+          setPosts(data);
+        } else {
+          console.error('API error:', data);
+          setPosts([]);
+        }
         setLoading(false);
       })
       .catch(err => {
@@ -20,20 +27,45 @@ export default function BlogPanel() {
       });
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="w-12 h-12 border-4 border-red-400 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Загрузка скрипта VK API один раз
+  useEffect(() => {
+    if (!document.querySelector('script[src*="vk.com/js/api/openapi.js"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://vk.com/js/api/openapi.js?173';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
+  // Инициализация виджетов VK после того, как посты отрендерены
+  useEffect(() => {
+    if (!window.VK || !window.VK.Widgets || posts.length === 0) return;
+    if (vkInitialized.current) return; // инициализируем только один раз
+    vkInitialized.current = true;
+
+    const timer = setTimeout(() => {
+      const containers = document.querySelectorAll('.vk-post-widget');
+      containers.forEach(container => {
+        const ownerId = container.getAttribute('data-owner-id');
+        const postId = container.getAttribute('data-post-id');
+        const hash = container.getAttribute('data-hash') || '';
+        const containerId = container.id;
+        if (ownerId && postId && containerId) {
+          window.VK.Widgets.Post(containerId, ownerId, postId, hash);
+        }
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [posts]);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64"><div className="w-12 h-12 border-4 border-red-400 border-t-transparent rounded-full animate-spin" /></div>;
+  }
   if (error) {
-    return <div className="text-red-400 text-center p-4">Ошибка загрузки: {error}</div>;
+    return <div className="text-red-400 text-center p-4">Ошибка: {error}</div>;
   }
 
   const getSourceIcon = (source) => {
-    // можно вернуть иконку VK, Coub, Telegram или просто кастомную
     if (source === 'vk') {
       return (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -41,65 +73,56 @@ export default function BlogPanel() {
         </svg>
       );
     }
-    // дефолтная иконка
     return <span className="text-xs">📄</span>;
   };
 
   return (
     <div className="blog-panel">
-      <h2 className="text-3xl font-bold mb-6 text-center text-white tracking-tight">
-        Блог / Новости
-      </h2>
+      <h2 className="text-3xl font-bold mb-6 text-center text-white tracking-tight">Блог / Новости</h2>
       <div className="flex flex-col items-center gap-6">
-        {posts.map((post) => (
-          <div
-            key={post.id}
-            className="w-full max-w-[960px] p-5 rounded-2xl transition-all duration-300 cursor-pointer"
-            onMouseEnter={() => setHoveredId(post.id)}
-            onMouseLeave={() => setHoveredId(null)}
-            style={{
-              background: 'rgba(20, 20, 30, 0.6)',
-              backdropFilter: 'blur(8px)',
-              border: '2px solid rgba(255, 80, 120, 0.6)',
-              boxShadow: hoveredId === post.id
-                ? '0 0 25px rgba(255, 80, 120, 0.6), inset 0 0 15px rgba(255, 80, 120, 0.2)'
-                : '0 0 15px rgba(255, 80, 120, 0.2), inset 0 0 10px rgba(255, 80, 120, 0.05)',
-              transform: hoveredId === post.id ? 'scale(1.01)' : 'scale(1)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              {getSourceIcon(post.source)}
-              <h3 className="text-lg font-semibold text-white">{post.title}</h3>
-              <span className="text-gray-400 text-xs ml-auto">{post.date}</span>
-            </div>
-
-            {post.image && (
-              <div className="mb-3 rounded-lg overflow-hidden bg-black/30">
-                <img src={post.image} alt={post.title} className="w-full h-auto object-cover" />
+        {posts.map((post) => {
+          const containerId = `vk_post_${post.owner_id}_${post.post_id}`;
+          return (
+            <div
+              key={containerId}
+              className="w-full max-w-[960px] p-5 rounded-2xl transition-all duration-300"
+              onMouseEnter={() => setHoveredId(containerId)}
+              onMouseLeave={() => setHoveredId(null)}
+              style={{
+                background: 'rgba(20, 20, 30, 0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '2px solid rgba(255, 80, 120, 0.6)',
+                boxShadow: hoveredId === containerId
+                  ? '0 0 25px rgba(255, 80, 120, 0.6), inset 0 0 15px rgba(255, 80, 120, 0.2)'
+                  : '0 0 15px rgba(255, 80, 120, 0.2), inset 0 0 10px rgba(255, 80, 120, 0.05)',
+                transform: hoveredId === containerId ? 'scale(1.01)' : 'scale(1)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {getSourceIcon(post.source)}
+                <h3 className="text-lg font-semibold text-white">Пост VK</h3>
+                <span className="text-gray-400 text-xs ml-auto">{post.formatted_date}</span>
               </div>
-            )}
-            {post.video && (
-              <div className="mb-3">
-                <a href={post.video} target="_blank" rel="noopener noreferrer" className="text-red-400 text-sm">
-                  📹 Смотреть видео
+              <div
+                id={containerId}
+                className="vk-post-widget"
+                data-owner-id={post.owner_id}
+                data-post-id={post.post_id}
+                data-hash={post.hash || ''}
+              ></div>
+              <div className="text-right mt-2">
+                <a
+                  href={`https://vk.com/wall${post.owner_id}_${post.post_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-red-400 hover:text-red-300 text-sm"
+                >
+                  Открыть оригинал →
                 </a>
               </div>
-            )}
-
-            <p className="text-gray-300 text-sm mb-3">{post.text}</p>
-
-            <div className="text-right mt-2">
-              <a
-                href={post.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-400 hover:text-red-300 text-sm inline-flex items-center gap-1"
-              >
-                Открыть оригинал →
-              </a>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
