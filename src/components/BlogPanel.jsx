@@ -47,6 +47,11 @@ export default function BlogPanel() {
             className="post-card p-5 rounded-2xl transition-all duration-300 cursor-pointer"
             onMouseEnter={() => setHoveredId(post.id)}
             onMouseLeave={() => setHoveredId(null)}
+            onClick={() => {
+              if (post.link && post.link !== '#') {
+                window.open(post.link, '_blank');
+              }
+            }}
             style={{
               background: 'rgba(20, 20, 30, 0.6)',
               backdropFilter: 'blur(8px)',
@@ -60,35 +65,23 @@ export default function BlogPanel() {
               maxWidth: '960px',
             }}
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-red-400 text-sm font-semibold uppercase tracking-wide">
-                {post.source}
-              </span>
-              <span className="text-gray-400 text-xs">{post.date}</span>
-            </div>
-            {post.image && (
+            {post.image_url && (
               <div className="mb-3 rounded-lg overflow-hidden bg-black/30">
-                <img src={post.image} alt={post.title} className="w-full h-auto object-cover" />
+                <img src={post.image_url} alt={post.title} className="w-full h-auto object-cover" />
               </div>
             )}
-            <h3 className="text-xl font-semibold text-white mb-2">{post.title}</h3>
-            <p className="text-gray-300 text-sm mb-3">{post.text}</p>
-            <div className="flex justify-between items-center mt-3">
-              <a
-                href={post.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-400 hover:text-red-300 transition text-sm"
-              >
-                Читать оригинал →
-              </a>
-              <button
-                onClick={() => alert('Комментарии скоро появятся!')}
-                className="text-xs px-3 py-1 rounded-full bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500/30 transition"
-              >
-                💬 Комментировать
-              </button>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-xl font-semibold text-white">{post.title}</h3>
+              <span className="text-gray-400 text-xs whitespace-nowrap ml-4">{post.formatted_date}</span>
             </div>
+            <p className="text-gray-300 text-sm mb-3">{post.content}</p>
+            {post.link && post.link !== '#' && (
+              <div className="text-right">
+                <span className="text-red-400 hover:text-red-300 transition text-sm inline-flex items-center gap-1">
+                  Читать далее →
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>
