@@ -73,3 +73,59 @@ html, body {
   animation: shake 0.5s;
   animation-iteration-count: 1;
 }
+
+/* Принудительная тёмная тема для виджета ВКонтакте */
+.vk-post-widget {
+  /* Основной фон виджета */
+  background: #1a1a2e !important;
+  color: #eee !important;
+  border-radius: 10px !important;
+}
+
+/* Затемняем саму карточку виджета и все её блоки */
+.vk-post-widget > *,
+.vk-post-widget .wall_post_cont {
+  background: #1a1a2e !important;
+  background-color: #1a1a2e !important;
+  border-color: #2c2c3e !important;
+}
+
+/* Текст поста и заголовки */
+.vk-post-widget .wall_post_text,
+.vk-post-widget .wall_post_author .author,
+.vk-post-widget .wall_post_info .date {
+  color: #e0e0e0 !important;
+}
+
+/* Ссылки в тексте поста */
+.vk-post-widget a {
+  color: #cc7b7b !important;
+  text-decoration: none;
+}
+
+.vk-post-widget a:hover {
+  text-decoration: underline !important;
+}
+
+/* Фон области с лайками, комментариями и т.д. (Action Panel) */
+.vk-post-widget .wall_post_actions,
+.vk-post-widget .wall_actions_row {
+  background: transparent !important;
+  border-top-color: #2c2c3e !important;
+}
+
+/* Кнопки лайков и комментариев */
+.vk-post-widget .wall_post_actions .like_btn,
+.vk-post-widget .wall_post_actions .comment_btn {
+  color: #aaa !important;
+}
+
+/* Иконки лайков */
+.vk-post-widget .like_btn .like_icon {
+  filter: invert(0.6);
+}
+
+/* Если навести курсор на кнопку лайка */
+.vk-post-widget .like_btn._like_hover .like_icon {
+  filter: invert(0.8);
+}
