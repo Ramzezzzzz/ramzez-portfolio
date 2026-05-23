@@ -53,17 +53,16 @@ export default function BlogPanel() {
 useEffect(() => {
   if (!vkReady || loading || posts.length === 0) return;
   const timer = setTimeout(() => {
-    if (window.VK && window.VK.Widgets) {
-      const containers = document.querySelectorAll('.vk-widget-container');
-      containers.forEach(container => {
-        const ownerId = container.getAttribute('data-owner-id');
-        const postId = container.getAttribute('data-post-id');
-        const elementId = container.id;
-        if (elementId && ownerId && postId && container.innerHTML.trim() === '') {
-          window.VK.Widgets.Post(elementId, ownerId, postId, '');
+// Этот код должен быть внутри вашего useEffect
+        if (window.VK && window.VK.Widgets) {
+          document.querySelectorAll('.vk-widget-container').forEach(container => {
+            const ownerId = container.getAttribute('data-owner-id');
+            const postId = container.getAttribute('data-post-id');
+            if (ownerId && postId && !container.innerHTML.trim()) {
+              window.VK.Widgets.Post(container, ownerId, postId, '');
+            }
+          });
         }
-      });
-    }
   }, 300);
   return () => clearTimeout(timer);
 }, [vkReady, loading, posts]);
