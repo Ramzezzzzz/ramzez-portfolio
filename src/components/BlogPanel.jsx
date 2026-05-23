@@ -58,24 +58,13 @@ useEffect(() => {
       containers.forEach(container => {
         const ownerId = container.getAttribute('data-owner-id');
         const postId = container.getAttribute('data-post-id');
-        // ✅ Проверяем, что контейнер ещё пуст (виджет не был инициализирован ранее)
+        const hash = container.getAttribute('data-hash') || '';
         if (ownerId && postId && container.id && container.innerHTML.trim() === '') {
-          try {
-            window.VK.Widgets.Post(container.id, ownerId, postId, '');
-          } catch (err) {
-            console.warn('VK Widget error:', err);
-          }
+          window.VK.Widgets.Post(container.id, ownerId, postId, hash);
         }
       });
-    } else {
-      // Если VK ещё не готов, повторяем попытку через 100 мс
-      setTimeout(() => {
-        if (window.VK && window.VK.Widgets) {
-          // ... тот же код
-        }
-      }, 100);
     }
-  }, 500); // увеличенная задержка
+  }, 500);
   return () => clearTimeout(timer);
 }, [vkReady, loading, posts]);
 
