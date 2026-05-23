@@ -9,6 +9,7 @@ import { MessageCircle, Smartphone } from "lucide-react";
 import Card3D from "../components/Card3D";
 import GlowingPanel from "../components/GlowingPanel";
 import ProjectsPanel from "../components/ProjectsPanel";
+import BlogPanel from "../components/BlogPanel";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
@@ -489,18 +490,7 @@ export default function HomePage() {
   onClose={closePanel}
   customPosition={{ top: '5%', right: '170px' }}
 >
-  <div style={{ width: '100%', maxWidth: '560px', margin: '0 auto' }}>
-    <iframe
-      width="560"
-      height="315"
-      src="https://www.youtube.com/embed/AAWOlIvJIUE"
-      title="YouTube"
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-      style={{ width: '100%', borderRadius: '1rem' }}
-    />
-  </div>
+  <BlogPanel />
 </GlowingPanel>
     </div>
   );
