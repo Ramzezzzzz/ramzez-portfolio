@@ -53,29 +53,40 @@ export default function BlogPanel() {
 useEffect(() => {
   if (!vkReady || loading || posts.length === 0) return;
   const timer = setTimeout(() => {
-// Этот код должен быть внутри вашего useEffect
-        if (window.VK && window.VK.Widgets) {
-          document.querySelectorAll('.vk-widget-container').forEach(container => {
-            const ownerId = container.getAttribute('data-owner-id');
-            const postId = container.getAttribute('data-post-id');
-            if (ownerId && postId && container.id) {
-              window.VK.Widgets.Post(container.id, ownerId, postId, '');
-            }
-          });
+    if (window.VK && window.VK.Widgets) {
+      const containers = document.querySelectorAll('.vk-widget-container');
+      containers.forEach(container => {
+        const ownerId = container.getAttribute('data-owner-id');
+        const postId = container.getAttribute('data-post-id');
+        // ✅ Проверяем, что контейнер ещё пуст (виджет не был инициализирован ранее)
+        if (ownerId && postId && container.id && container.innerHTML.trim() === '') {
+          try {
+            window.VK.Widgets.Post(container.id, ownerId, postId, '');
+          } catch (err) {
+            console.warn('VK Widget error:', err);
+          }
         }
-  }, 300);
+      });
+    } else {
+      // Если VK ещё не готов, повторяем попытку через 100 мс
+      setTimeout(() => {
+        if (window.VK && window.VK.Widgets) {
+          // ... тот же код
+        }
+      }, 100);
+    }
+  }, 500); // увеличенная задержка
   return () => clearTimeout(timer);
 }, [vkReady, loading, posts]);
 
   // Инициализация Telegram виджетов (если нужно)
-  useEffect(() => {
-    if (!tgReady || loading || posts.length === 0) return;
-    // Telegram виджеты инициализируются автоматически при наличии .telegram-widget
-    // Если нужна принудительная, можно вызвать window.TelegramWidget?.reinit()
-    if (window.TelegramWidget && typeof window.TelegramWidget.reinit === 'function') {
-      window.TelegramWidget.reinit();
-    }
-  }, [tgReady, loading, posts]);
+ useEffect(() => {
+  if (!tgReady || loading || posts.length === 0) return;
+  // временно отключаем, чтобы не засорять консоль
+  // if (window.TelegramWidget && typeof window.TelegramWidget.reinit === 'function') {
+  //   window.TelegramWidget.reinit();
+  // }
+}, [tgReady, loading, posts]);
 
   if (loading) {
     return (
