@@ -4,13 +4,13 @@ html, body {
     padding: 0;
     overflow: hidden;
     min-height: 100dvh;
-  }
+}
 
 #root {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-  }
+}
 
 @tailwind base;
 @tailwind components;
@@ -21,7 +21,7 @@ html, body {
   opacity: 1.2 !important;
 }
 
-/* —тили дл€ прокрутки панели проектов и GlowingPanel */
+/* —тили дл€ кастомной прокрутки (примен€ютс€ только к элементам с классами projects-panel и glowing-panel-content) */
 .projects-panel::-webkit-scrollbar,
 .glowing-panel-content::-webkit-scrollbar {
   width: 8px;
@@ -72,10 +72,4 @@ html, body {
 .shake {
   animation: shake 0.5s;
   animation-iteration-count: 1;
-}
-
-/* ƒополнительно дл€ скролла внутри панели проектов (если нужно) */
-.projects-panel {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
