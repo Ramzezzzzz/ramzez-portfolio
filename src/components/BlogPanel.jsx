@@ -50,27 +50,23 @@ export default function BlogPanel() {
   }, []);
 
   // Инициализируем VK виджеты после того, как посты отрендерились и VK API готов
-  useEffect(() => {
-    if (!vkReady || loading || posts.length === 0) return;
-    // Небольшая задержка, чтобы DOM обновился
-    const timer = setTimeout(() => {
-      if (window.VK && window.VK.Widgets) {
-        const containers = document.querySelectorAll('.vk-widget-container');
-        containers.forEach(container => {
-          const ownerId = container.getAttribute('data-owner-id');
-          const postId = container.getAttribute('data-post-id');
-          const elementId = container.id;
-          if (elementId && ownerId && postId) {
-            // Не пересоздаём, если уже есть содержимое
-            if (container.innerHTML.trim() === '') {
-              window.VK.Widgets.Post(elementId, ownerId, postId, '');
-            }
-          }
-        });
-      }
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [vkReady, loading, posts]);
+useEffect(() => {
+  if (!vkReady || loading || posts.length === 0) return;
+  const timer = setTimeout(() => {
+    if (window.VK && window.VK.Widgets) {
+      const containers = document.querySelectorAll('.vk-widget-container');
+      containers.forEach(container => {
+        const ownerId = container.getAttribute('data-owner-id');
+        const postId = container.getAttribute('data-post-id');
+        const elementId = container.id;
+        if (elementId && ownerId && postId && container.innerHTML.trim() === '') {
+          window.VK.Widgets.Post(elementId, ownerId, postId, '');
+        }
+      });
+    }
+  }, 300);
+  return () => clearTimeout(timer);
+}, [vkReady, loading, posts]);
 
   // Инициализация Telegram виджетов (если нужно)
   useEffect(() => {
