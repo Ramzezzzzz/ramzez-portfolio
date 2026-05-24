@@ -119,7 +119,7 @@ export default function BlogPanel() {
                       rel="noopener noreferrer"
                       className="text-red-400 hover:text-red-300 text-sm"
                     >
-                      Открыть оригинал →
+                      Источник →
                     </a>
                   </div>
                 </div>
