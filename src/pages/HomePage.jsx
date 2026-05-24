@@ -13,17 +13,12 @@ import BlogPanel from "../components/BlogPanel";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-const dialogues = [
-  "Привет! Я Ramzez.",
-  "Хочешь чаю с чак-чаком?",
-  "Здесь мои проекты и мысли.",
-  "Устраивайся поудобнее.",
-];
-
 export default function HomePage() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { layer1, layer2, layer3 } = useMouseParallax();
   const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [dialoguesList, setDialoguesList] = useState([]);
+  const [dialoguesLoaded, setDialoguesLoaded] = useState(false);
   const [showInterface, setShowInterface] = useState(false);
   const [activeImage, setActiveImage] = useState("right");
   const [blackOverlayOpacity, setBlackOverlayOpacity] = useState(1);
@@ -53,6 +48,26 @@ export default function HomePage() {
       setGyroPermissionGranted(true);
     }
   };
+
+  // Загрузка диалогов из БД
+  useEffect(() => {
+    fetch('/api/dialogues.php')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDialoguesList(data);
+        } else {
+          console.error('Ошибка загрузки диалогов:', data);
+          setDialoguesList([]);
+        }
+        setDialoguesLoaded(true);
+      })
+      .catch(err => {
+        console.error(err);
+        setDialoguesList([]);
+        setDialoguesLoaded(true);
+      });
+  }, []);
 
   // Прелоадер
   useEffect(() => {
@@ -140,21 +155,21 @@ export default function HomePage() {
       if (!allowDialogue) return;
       if (deltaY > 0) {
         if (!showInterface) {
-          if (dialogueIndex < dialogues.length - 1) setDialogueIndex(prev => prev + 1);
+          if (dialogueIndex < dialoguesList.length - 1) setDialogueIndex(prev => prev + 1);
           else setShowInterface(true);
           playClick();
         }
       } else {
         if (showInterface) {
           setShowInterface(false);
-          setDialogueIndex(dialogues.length - 1);
+          setDialogueIndex(dialoguesList.length - 1);
         } else if (dialogueIndex > 0) {
           setDialogueIndex(prev => prev - 1);
         }
         playClick();
       }
     },
-    [dialogueIndex, showInterface, playClick, allowDialogue]
+    [dialogueIndex, showInterface, playClick, allowDialogue, dialoguesList.length]
   );
   useEffect(() => {
     const el = containerRef.current;
@@ -202,21 +217,23 @@ export default function HomePage() {
   const nextDialogue = () => {
     if (!allowDialogue) return;
     playClick();
-    if (dialogueIndex < dialogues.length - 1) setDialogueIndex(prev => prev + 1);
+    if (dialogueIndex < dialoguesList.length - 1) setDialogueIndex(prev => prev + 1);
     else setShowInterface(true);
   };
-  const handleTreatsClick = () => {
+  const handleTreatsClick = (e, index) => {
+    e.stopPropagation();
     if (!allowDialogue) return;
     playClick();
-    setDialogueIndex(prev => prev + 1);
+    if (index < dialoguesList.length - 1) setDialogueIndex(prev => prev + 1);
+    else setShowInterface(true);
   };
 
   useEffect(() => {
-    if (dialogueIndex === 3 && allowDialogue) {
+    if (dialoguesLoaded && dialoguesList.length > 0 && dialogueIndex === dialoguesList.length - 1 && allowDialogue) {
       const timer = setTimeout(() => nextDialogue(), 1000);
       return () => clearTimeout(timer);
     }
-  }, [dialogueIndex, allowDialogue]);
+  }, [dialogueIndex, dialoguesList, allowDialogue, dialoguesLoaded]);
 
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.0,
@@ -249,8 +266,6 @@ export default function HomePage() {
     : selectedCard === 'blog'
     ? (isMobile ? '-40%' : '-20%')
     : '0%';
-
-  const panelPosition = selectedCard === 'projects' ? 'right' : selectedCard === 'blog' ? 'left' : 'center';
 
   return (
     <div
@@ -286,22 +301,21 @@ export default function HomePage() {
         </motion.div>
       )}
 
-        {/* ВИНЬЕТКА – чёрная, тестовая. Потом сделаете прозрачнее */}
-        <div
-          className="fixed inset-0 pointer-events-none"
-          style={{
-            background: "radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.95) 100%)",
-            zIndex: 15,
-          }}
-        />
+      {/* Виньетка */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 70%, rgba(0,0,0,0.95) 100%)",
+          zIndex: 15,
+        }}
+      />
 
-      {/* СЦЕНА (смещается) */}
+      {/* Сцена (смещается) */}
       <motion.div
         className="absolute inset-0 z-0"
         animate={{ x: sceneOffsetX }}
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
       >
-        {/* Фоновое изображение – растянуто на 130%, чтобы не было краёв при смещении */}
         <ParallaxLayer offset={backgroundOffset} className="absolute z-0" style={{ width: "180vw", height: "180vh", left: "-40vw", top: "-15vh" }}>
           <div
             className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
@@ -389,7 +403,7 @@ export default function HomePage() {
           />
         </ParallaxLayer>
 
-        {/* Карточки (они смещаются вместе со сценой) */}
+        {/* Карточки */}
         {showInterface && (
           <div className="absolute inset-0 z-20 pointer-events-none">
             <div
@@ -430,68 +444,70 @@ export default function HomePage() {
         )}
       </motion.div>
 
-      {/* UI слой (диалоги, чай) – не смещается, выше виньетки */}
+      {/* UI слой (диалоги) */}
       <div className="absolute inset-0 z-20 pointer-events-none">
         <div className={`h-full flex flex-col justify-end items-center px-4 ${isMobile ? "pb-12" : "pb-12 sm:pb-18"}`}>
           <AnimatePresence mode="wait">
-            {!showInterface && allowDialogue && dialogueIndex === 0 && (
-              <motion.div key="dialogue-0" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }} className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md" onClick={nextDialogue}>
-                <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
-                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
-                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[0]}</p>
-                </GlassCard>
-              </motion.div>
-            )}
-            {!showInterface && allowDialogue && dialogueIndex === 1 && (
-              <motion.div key="dialogue-1" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }} className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md" onClick={nextDialogue}>
-                <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
-                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
-                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[1]}</p>
-                </GlassCard>
-              </motion.div>
-            )}
-            {!showInterface && allowDialogue && dialogueIndex >= 3 && (
-              <motion.div key={`dialogue-${dialogueIndex}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5 }} className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md" onClick={nextDialogue}>
-                <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
-                  <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
-                  <p className="text-white text-base sm:text-lg font-medium">{dialogues[dialogueIndex]}</p>
-                </GlassCard>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {dialogueIndex === 2 && allowDialogue && !showInterface && (
-              <motion.div className="absolute inset-0 pointer-events-none" initial="hidden" animate="visible" exit="exit">
-                <motion.div className="absolute pointer-events-auto cursor-pointer" style={{ left: isMobile ? '10%' : '25%', bottom: '40%', width: '110px', height: '110px' }} onClick={handleTreatsClick} variants={{ hidden: { opacity: 0, x: -30 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -30 } }} transition={{ duration: 0.8 }}>
-                  <motion.img src={`${BASE_URL}images/tea.png`} alt="Чай" className="w-full h-full object-contain" style={{ filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8))' }} animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} />
+            {!showInterface && allowDialogue && dialoguesLoaded && dialoguesList.map((dialog, idx) => (
+              dialogueIndex === idx && (
+                <motion.div
+                  key={dialog.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="pointer-events-auto cursor-pointer mb-2 sm:mb-4 w-full max-w-md"
+                  onClick={() => dialog.type !== 'treats' && nextDialogue()}
+                >
+                  <GlassCard className="flex items-center gap-3 px-4 py-3 sm:px-6 sm:py-4 !rounded-2xl">
+                    {dialog.type === 'treats' ? (
+                      <div className="flex justify-center gap-6 w-full">
+                        <motion.img
+                          src={`${BASE_URL}images/tea.png`}
+                          alt="Чай"
+                          className="w-16 h-16 object-contain cursor-pointer"
+                          whileHover={{ scale: 1.1 }}
+                          onClick={(e) => handleTreatsClick(e, idx)}
+                        />
+                        <motion.img
+                          src={`${BASE_URL}images/chakchak.png`}
+                          alt="Чак-чак"
+                          className="w-16 h-16 object-contain cursor-pointer"
+                          whileHover={{ scale: 1.1 }}
+                          onClick={(e) => handleTreatsClick(e, idx)}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-400 shrink-0" />
+                        <p className="text-white text-base sm:text-lg font-medium">{dialog.text}</p>
+                      </>
+                    )}
+                  </GlassCard>
                 </motion.div>
-                <motion.div className="absolute pointer-events-auto cursor-pointer" style={{ right: isMobile ? '10%' : '25%', bottom: '40%', width: '110px', height: '110px' }} onClick={handleTreatsClick} variants={{ hidden: { opacity: 0, x: 30 }, visible: { opacity: 1, x: 0 }, exit: { opacity: 0, x: 30 } }} transition={{ duration: 0.8 }}>
-                  <motion.img src={`${BASE_URL}images/chakchak.png`} alt="Чак-чак" className="w-full h-full object-contain" style={{ filter: 'drop-shadow(0 0 18px rgba(255,80,80,0.8))' }} animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }} />
-                </motion.div>
-              </motion.div>
-            )}
+              )
+            ))}
           </AnimatePresence>
         </div>
       </div>
 
-        {/* Панель ПРОЕКТОВ (левая) – отступ 5% от левого края, вертикально по центру */}
-        <GlowingPanel 
-          isOpen={panelOpen && selectedCard === 'projects'} 
-          onClose={closePanel}
-          customPosition={{ left: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
-        >
-          <ProjectsPanel />
-        </GlowingPanel>
+      {/* Панель проектов */}
+      <GlowingPanel
+        isOpen={panelOpen && selectedCard === 'projects'}
+        onClose={closePanel}
+        customPosition={{ left: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
+      >
+        <ProjectsPanel />
+      </GlowingPanel>
 
-        {/* Панель БЛОГА (правая) – отступ 5% от правого края, вертикально по центру */}
-        <GlowingPanel 
-          isOpen={panelOpen && selectedCard === 'blog'} 
-          onClose={closePanel}
-          customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
-        >
-          <BlogPanel />
-        </GlowingPanel>
+      {/* Панель блога */}
+      <GlowingPanel
+        isOpen={panelOpen && selectedCard === 'blog'}
+        onClose={closePanel}
+        customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
+      >
+        <BlogPanel />
+      </GlowingPanel>
     </div>
   );
 }
