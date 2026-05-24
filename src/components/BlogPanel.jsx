@@ -1,24 +1,18 @@
 ﻿import { useState, useEffect, useRef } from 'react';
 
-export default function BlogPanel() {
+export default function BlogPanel({ isOpen }) {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hovered, setHovered] = useState(false);
-  const vkInitialized = useRef(false);
   const containerRef = useRef(null);
 
-  // Загрузка постов из API
   useEffect(() => {
     fetch('/api/blog_posts.php')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-          setPosts(data);
-        } else {
-          console.error('API error:', data);
-          setPosts([]);
-        }
+        if (Array.isArray(data)) setPosts(data);
+        else setPosts([]);
         setLoading(false);
       })
       .catch(err => {
@@ -28,7 +22,7 @@ export default function BlogPanel() {
       });
   }, []);
 
-  // Загрузка скрипта VK API один раз
+  // Загрузка скрипта VK API
   useEffect(() => {
     if (!document.querySelector('script[src*="vk.com/js/api/openapi.js"]')) {
       const script = document.createElement('script');
@@ -38,45 +32,44 @@ export default function BlogPanel() {
     }
   }, []);
 
-  // Инициализация виджетов VK после рендера постов
+  // Инициализация виджетов при открытии панели
   useEffect(() => {
-    if (!window.VK || !window.VK.Widgets || posts.length === 0) return;
-    if (vkInitialized.current) return;
-    vkInitialized.current = true;
+    if (!isOpen || loading || posts.length === 0) return;
 
-    const timer = setTimeout(() => {
-      const containers = document.querySelectorAll('.vk-post-widget');
-      containers.forEach(container => {
-        const ownerId = container.getAttribute('data-owner-id');
-        const postId = container.getAttribute('data-post-id');
-        const hash = container.getAttribute('data-hash') || '';
-        const containerId = container.id;
-        if (ownerId && postId && containerId) {
-          window.VK.Widgets.Post(containerId, ownerId, postId, hash);
-        }
-      });
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [posts]);
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(() => {
+      if (window.VK && window.VK.Widgets) {
+        clearInterval(interval);
+        const containers = document.querySelectorAll('.vk-post-widget');
+        containers.forEach(container => {
+          const ownerId = container.getAttribute('data-owner-id');
+          const postId = container.getAttribute('data-post-id');
+          const hash = container.getAttribute('data-hash') || '';
+          const containerId = container.id;
+          if (ownerId && postId && containerId && container.innerHTML.trim() === '') {
+            try {
+              window.VK.Widgets.Post(containerId, ownerId, postId, hash);
+            } catch (err) {
+              console.warn('VK Widget error:', err);
+            }
+          }
+        });
+      } else if (++attempts >= maxAttempts) {
+        clearInterval(interval);
+        console.warn('VK API не загрузился');
+      }
+    }, 300);
+    return () => clearInterval(interval);
+  }, [isOpen, loading, posts]);
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="w-12 h-12 border-4 border-red-400 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (error) {
-    return <div className="text-red-400 text-center p-4">Ошибка: {error}</div>;
-  }
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="w-12 h-12 border-4 border-red-400 border-t-transparent rounded-full animate-spin" /></div>;
+  if (error) return <div className="text-red-400 text-center p-4">Ошибка: {error}</div>;
 
   return (
     <div className="blog-panel" ref={containerRef}>
-      <h2 className="text-3xl font-bold mb-6 text-center text-white tracking-tight">
-        Блог / Новости
-      </h2>
+      <h2 className="text-3xl font-bold mb-6 text-center text-white tracking-tight">Блог / Новости</h2>
       <div className="flex flex-col items-center gap-6">
-        {/* Одна карточка, как в проектах */}
         <div
           className="w-full max-w-[960px] p-5 rounded-2xl transition-all duration-300 cursor-pointer"
           onMouseEnter={() => setHovered(true)}
@@ -112,14 +105,7 @@ export default function BlogPanel() {
                     ></div>
                   </div>
                   <div className="text-right mt-2">
-                    <a
-                      href={`https://vk.com/wall${post.owner_id}_${post.post_id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-red-400 hover:text-red-300 text-sm"
-                    >
-                      Источник →
-                    </a>
+                    <a href={`https://vk.com/wall${post.owner_id}_${post.post_id}`} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:text-red-300 text-sm">Открыть оригинал →</a>
                   </div>
                 </div>
               );

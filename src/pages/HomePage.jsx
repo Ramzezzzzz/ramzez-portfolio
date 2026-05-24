@@ -501,13 +501,13 @@ export default function HomePage() {
       </GlowingPanel>
 
       {/* Панель блога */}
-      <GlowingPanel
-        isOpen={panelOpen && selectedCard === 'blog'}
-        onClose={closePanel}
-        customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
-      >
-        <BlogPanel />
-      </GlowingPanel>
+        <GlowingPanel 
+          isOpen={panelOpen && selectedCard === 'blog'} 
+          onClose={closePanel}
+          customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
+        >
+          <BlogPanel isOpen={panelOpen && selectedCard === 'blog'} />
+        </GlowingPanel>
     </div>
   );
 }
