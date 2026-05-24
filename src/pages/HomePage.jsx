@@ -396,7 +396,7 @@ export default function HomePage() {
               className="pointer-events-auto absolute"
               style={{
                 left: isMobile ? '-3%' : '25%',
-                bottom: isMobile ? '40%' : '50%',
+                bottom: isMobile ? '50%' : '50%',
                 transform: 'translateY(50%)',
               }}
             >
@@ -413,7 +413,7 @@ export default function HomePage() {
               className="pointer-events-auto absolute"
               style={{
                 right: isMobile ? '-3%' : '25%',
-                bottom: isMobile ? '40%' : '50%',
+                bottom: isMobile ? '50%' : '50%',
                 transform: 'translateY(50%)',
               }}
             >
@@ -475,23 +475,23 @@ export default function HomePage() {
         </div>
       </div>
 
-{/* Панель ПРОЕКТОВ (левая) */}
-<GlowingPanel 
-  isOpen={panelOpen && selectedCard === 'projects'} 
-  onClose={closePanel}
-  customPosition={{ top: '5%', left: '170px' }}
->
-  <ProjectsPanel />
-</GlowingPanel>
+        {/* Панель ПРОЕКТОВ (левая) – отступ 5% от левого края, вертикально по центру */}
+        <GlowingPanel 
+          isOpen={panelOpen && selectedCard === 'projects'} 
+          onClose={closePanel}
+          customPosition={{ left: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
+        >
+          <ProjectsPanel />
+        </GlowingPanel>
 
-{/* Панель БЛОГА (правая) */}
-<GlowingPanel 
-  isOpen={panelOpen && selectedCard === 'blog'} 
-  onClose={closePanel}
-  customPosition={{ top: '5%', right: '170px' }}
->
-  <BlogPanel />
-</GlowingPanel>
+        {/* Панель БЛОГА (правая) – отступ 5% от правого края, вертикально по центру */}
+        <GlowingPanel 
+          isOpen={panelOpen && selectedCard === 'blog'} 
+          onClose={closePanel}
+          customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
+        >
+          <BlogPanel />
+        </GlowingPanel>
     </div>
   );
 }
