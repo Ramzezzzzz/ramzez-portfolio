@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useLocation } from "react-router-dom";
 import ParallaxLayer from "../components/ParallaxLayer";
 import GlassCard from "../components/GlassCard";
 import MuteButton from "../components/MuteButton";
@@ -13,7 +14,7 @@ import BlogPanel from "../components/BlogPanel";
 
 const BASE_URL = import.meta.env.BASE_URL || "/";
 
-export default function HomePage() {
+export default function HomePage({ initialPanel = null }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { layer1, layer2, layer3 } = useMouseParallax();
   const [dialogueIndex, setDialogueIndex] = useState(0);
@@ -39,6 +40,9 @@ export default function HomePage() {
   const [originRect, setOriginRect] = useState(null);
   const [hideLeftCard, setHideLeftCard] = useState(false);
   const [hideRightCard, setHideRightCard] = useState(false);
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const requestGyroPermission = async () => {
     if (typeof DeviceOrientationEvent?.requestPermission === "function") {
@@ -235,6 +239,44 @@ export default function HomePage() {
     }
   }, [dialogueIndex, dialoguesList, allowDialogue, dialoguesLoaded]);
 
+  // --- Роутинг и аналитика ---
+  useEffect(() => {
+    if (!dialoguesLoaded || !allowDialogue) return;
+    if (initialPanel === 'projects') {
+      setSelectedCard('projects');
+      setPanelOpen(true);
+      setHideLeftCard(true);
+      if (window.ym) window.ym(109412309, 'hit', '/project');
+    } else if (initialPanel === 'blog') {
+      setSelectedCard('blog');
+      setPanelOpen(true);
+      setHideRightCard(true);
+      if (window.ym) window.ym(109412309, 'hit', '/blog');
+    }
+  }, [initialPanel, dialoguesLoaded, allowDialogue]);
+
+  useEffect(() => {
+    const path = location.pathname.replace(BASE_URL, '') || '/';
+    if (path === '/project' && selectedCard !== 'projects') {
+      setSelectedCard('projects');
+      setPanelOpen(true);
+      setHideLeftCard(true);
+      if (window.ym) window.ym(109412309, 'hit', '/project');
+    } else if (path === '/blog' && selectedCard !== 'blog') {
+      setSelectedCard('blog');
+      setPanelOpen(true);
+      setHideRightCard(true);
+      if (window.ym) window.ym(109412309, 'hit', '/blog');
+    } else if (path === '/' && selectedCard !== null) {
+      setPanelOpen(false);
+      setSelectedCard(null);
+      setOriginRect(null);
+      setHideLeftCard(false);
+      setHideRightCard(false);
+      if (window.ym) window.ym(109412309, 'hit', '/');
+    }
+  }, [location.pathname, selectedCard]);
+
   const backgroundOffset = {
     x: (isMobile ? gyroOffsets.layer1.x : layer1.x) * 2.0,
     y: (isMobile ? gyroOffsets.layer1.y : layer1.y) * 0.4,
@@ -249,8 +291,21 @@ export default function HomePage() {
     setOriginRect(rect);
     setSelectedCard(type);
     setPanelOpen(true);
-    if (type === 'projects') setHideLeftCard(true);
-    if (type === 'blog') setHideRightCard(true);
+    if (type === 'projects') {
+      setHideLeftCard(true);
+      navigate('/project');
+      if (window.ym) {
+        window.ym(109412309, 'reachGoal', 'open_projects');
+        window.ym(109412309, 'hit', '/project');
+      }
+    } else if (type === 'blog') {
+      setHideRightCard(true);
+      navigate('/blog');
+      if (window.ym) {
+        window.ym(109412309, 'reachGoal', 'open_blog');
+        window.ym(109412309, 'hit', '/blog');
+      }
+    }
   };
 
   const closePanel = () => {
@@ -259,6 +314,8 @@ export default function HomePage() {
     setOriginRect(null);
     setHideLeftCard(false);
     setHideRightCard(false);
+    navigate('/');
+    if (window.ym) window.ym(109412309, 'hit', '/');
   };
 
   const sceneOffsetX = selectedCard === 'projects'
@@ -501,13 +558,13 @@ export default function HomePage() {
       </GlowingPanel>
 
       {/* Панель блога */}
-        <GlowingPanel 
-          isOpen={panelOpen && selectedCard === 'blog'} 
-          onClose={closePanel}
-          customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
-        >
-          <BlogPanel isOpen={panelOpen && selectedCard === 'blog'} />
-        </GlowingPanel>
+      <GlowingPanel
+        isOpen={panelOpen && selectedCard === 'blog'}
+        onClose={closePanel}
+        customPosition={{ right: '5%', top: '3.5%', transform: 'translateY(-50%)' }}
+      >
+        <BlogPanel isOpen={panelOpen && selectedCard === 'blog'} />
+      </GlowingPanel>
     </div>
   );
 }
