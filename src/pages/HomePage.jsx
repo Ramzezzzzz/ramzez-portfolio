@@ -256,6 +256,13 @@ export default function HomePage({ initialPanel = null }) {
   }, [initialPanel, dialoguesLoaded, allowDialogue]);
 
   useEffect(() => {
+  // Отправляем виртуальный просмотр в Метрику при изменении пути
+  if (window.ym) {
+    window.ym(109412309, 'hit', location.pathname);
+  }
+}, [location.pathname]);
+
+  useEffect(() => {
     const path = location.pathname.replace(BASE_URL, '') || '/';
     if (path === '/project' && selectedCard !== 'projects') {
       setSelectedCard('projects');
