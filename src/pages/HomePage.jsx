@@ -312,6 +312,9 @@ export default function HomePage({ initialPanel = null }) {
         window.ym(109412309, 'reachGoal', 'open_blog');
         window.ym(109412309, 'hit', '/blog');
       }
+        if (window.ym) {
+    window.ym(109412309, 'reachGoal', `open_${type}`);
+  }
     }
   };
 
