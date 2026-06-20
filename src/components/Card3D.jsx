@@ -135,11 +135,9 @@ export default function Card3D({
   const [hover, setHover] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
-  const [showFallbackText, setShowFallbackText] = useState(false);
   const cardRef = useRef(null);
   const retryCount = useRef(0);
   const maxRetries = 2;
-  const fallbackTimer = useRef(null);
 
   const rotateX = useRef(-0.12 * Math.PI);
   const rotateY = useRef(baseRotationY);
@@ -151,10 +149,6 @@ export default function Card3D({
       () => {
         setModelLoaded(true);
         setLoadError(false);
-        if (fallbackTimer.current) {
-          clearTimeout(fallbackTimer.current);
-          fallbackTimer.current = null;
-        }
       },
       undefined,
       (error) => {
@@ -170,20 +164,7 @@ export default function Card3D({
   }, [glbPath]);
 
   useEffect(() => {
-    // Запускаем таймер для показа текстовой заглушки через 1.5 секунды
-    fallbackTimer.current = setTimeout(() => {
-      if (!modelLoaded && !loadError) {
-        setShowFallbackText(true);
-      }
-    }, 1500);
     loadModel();
-
-    return () => {
-      if (fallbackTimer.current) {
-        clearTimeout(fallbackTimer.current);
-        fallbackTimer.current = null;
-      }
-    };
   }, [loadModel]);
 
   useEffect(() => {
@@ -270,23 +251,29 @@ export default function Card3D({
         }
       }}
     >
-      {!modelLoaded && !loadError && !showFallbackText && (
-        <div className="w-full h-full bg-gray-800/30 rounded-xl flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-      {showFallbackText && !modelLoaded && !loadError && (
-        <div className="w-full h-full bg-gray-800/50 rounded-xl flex items-center justify-center text-white text-lg font-semibold">
-          {label}
-        </div>
-      )}
+      {/* ВСЕГДА ПОКАЗЫВАЕМ ТЕКСТОВУЮ ЗАГЛУШКУ С НЕБОЛЬШИМ ФОНОМ */}
+      <div
+        className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-800/50 text-white text-lg font-semibold"
+        style={{
+          opacity: modelLoaded ? 0 : 1,
+          transition: 'opacity 0.5s ease-in-out',
+          zIndex: 2,
+        }}
+      >
+        {label}
+      </div>
+
       {loadError && (
-        <div className="w-full h-full bg-gray-800/50 rounded-xl flex items-center justify-center text-red-400 text-xs p-2 text-center">
-          3D<br />ошибка
+        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-gray-800/50 text-red-400 text-xs p-2 text-center z-3">
+          3D ошибка
         </div>
       )}
+
       {modelLoaded && (
-        <Canvas camera={{ position: [0, 0.5, 3], fov: 45 }} style={{ background: 'transparent', width: '100%', height: '100%' }}>
+        <Canvas
+          camera={{ position: [0, 0.5, 3], fov: 45 }}
+          style={{ background: 'transparent', width: '100%', height: '100%' }}
+        >
           <ambientLight intensity={0.5} />
           <directionalLight position={[5, 5, 5]} intensity={0.8} />
           <Suspense fallback={null}>
