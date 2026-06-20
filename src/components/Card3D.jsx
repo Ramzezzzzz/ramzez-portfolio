@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect, Suspense, useMemo } from 'react';
+﻿import React, { useState, useRef, useEffect, Suspense, useMemo, useCallback } from 'react';
 import { Canvas, useLoader, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { Environment, Text } from '@react-three/drei';
@@ -134,21 +134,63 @@ export default function Card3D({
 }) {
   const [hover, setHover] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [showFallbackText, setShowFallbackText] = useState(false);
   const cardRef = useRef(null);
+  const retryCount = useRef(0);
+  const maxRetries = 2;
+  const fallbackTimer = useRef(null);
 
   const rotateX = useRef(-0.12 * Math.PI);
   const rotateY = useRef(baseRotationY);
   const hoverRef = useRef(false);
 
-  useEffect(() => {
+  const loadModel = useCallback(() => {
     const loader = new GLTFLoader();
-    loader.load(glbPath, () => setModelLoaded(true));
+    loader.load(glbPath,
+      () => {
+        setModelLoaded(true);
+        setLoadError(false);
+        if (fallbackTimer.current) {
+          clearTimeout(fallbackTimer.current);
+          fallbackTimer.current = null;
+        }
+      },
+      undefined,
+      (error) => {
+        console.warn(`Error loading model ${glbPath}:`, error);
+        if (retryCount.current < maxRetries) {
+          retryCount.current++;
+          setTimeout(loadModel, 1500 * retryCount.current);
+        } else {
+          setLoadError(true);
+        }
+      }
+    );
   }, [glbPath]);
+
+  useEffect(() => {
+    // Запускаем таймер для показа текстовой заглушки через 1.5 секунды
+    fallbackTimer.current = setTimeout(() => {
+      if (!modelLoaded && !loadError) {
+        setShowFallbackText(true);
+      }
+    }, 1500);
+    loadModel();
+
+    return () => {
+      if (fallbackTimer.current) {
+        clearTimeout(fallbackTimer.current);
+        fallbackTimer.current = null;
+      }
+    };
+  }, [loadModel]);
 
   useEffect(() => {
     hoverRef.current = hover;
   }, [hover]);
 
+  // Гироскоп
   useEffect(() => {
     if (!isGyroActive) return;
     const handleOrientation = (event) => {
@@ -170,6 +212,7 @@ export default function Card3D({
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [isGyroActive, baseRotationY]);
 
+  // Слежение мышью (наклон всегда)
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!cardRef.current) return;
@@ -227,10 +270,19 @@ export default function Card3D({
         }
       }}
     >
-      {!modelLoaded && (
-        <div className="w-full h-full bg-gray-800/50 rounded-xl flex flex-col items-center justify-center gap-2">
-          <div className="w-8 h-8 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-          <div className="text-white/60 text-xs">загрузка 3D</div>
+      {!modelLoaded && !loadError && !showFallbackText && (
+        <div className="w-full h-full bg-gray-800/30 rounded-xl flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      {showFallbackText && !modelLoaded && !loadError && (
+        <div className="w-full h-full bg-gray-800/50 rounded-xl flex items-center justify-center text-white text-lg font-semibold">
+          {label}
+        </div>
+      )}
+      {loadError && (
+        <div className="w-full h-full bg-gray-800/50 rounded-xl flex items-center justify-center text-red-400 text-xs p-2 text-center">
+          3D<br />ошибка
         </div>
       )}
       {modelLoaded && (
